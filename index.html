@@ -12,27 +12,79 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
+  
   <style>
     body {
       background: #f7f2ee;
       font-family: Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .glass {
       background: rgba(255,255,255,0.92);
       backdrop-filter: blur(10px);
     }
+
+    @media (max-width: 768px) {
+
+      .mobile-stack {
+        flex-direction: column !important;
+      }
+
+      .mobile-full {
+        width: 100% !important;
+      }
+
+      h1 {
+        font-size: 2.5rem !important;
+        line-height: 1.1;
+      }
+
+      h2 {
+        font-size: 1.75rem !important;
+      }
+
+      .mobile-scroll {
+        overflow-x: auto;
+      }
+
+      button {
+        min-height: 44px;
+      }
+
+      input,
+      textarea,
+      select {
+        font-size: 16px !important;
+      }
+
+      .mobile-grid-1 {
+        grid-template-columns: 1fr !important;
+      }
+
+    }
   </style>
 
 
+
 <meta name="NetsparkQuiltingResult" total-length="29540" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="31015" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="35475" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="37592" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="40099" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="41327" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
 
 <div class="max-w-7xl mx-auto p-6">
 
-  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8 mobile-stack">
 
     <div>
       <h1 class="text-5xl font-black text-[#9caf88]">Wedding HQ</h1>
@@ -48,7 +100,36 @@
   </div>
 
 
-  <!-- CRITICAL TASKS -->
+  <!-- TAB NAVIGATION -->
+
+  <div class="flex flex-wrap gap-3 mb-8 justify-center">
+
+    <button onclick="showTab('tasksTab')"
+      class="tab-btn bg-[#9caf88] text-white px-5 py-3 rounded-2xl">
+      Tasks
+    </button>
+
+    <button onclick="showTab('vendorsTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Vendors
+    </button>
+
+    <button onclick="showTab('meetingsTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Meetings
+    </button>
+
+    <button onclick="showTab('timelineTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Timeline
+    </button>
+
+  </div>
+
+
+  <div id="tasksTab" class="tab-content">
+
+<!-- CRITICAL TASKS -->
 
   <div class="glass rounded-3xl p-6 shadow-lg mb-8 border-2 border-red-300">
 
@@ -97,7 +178,10 @@
 
   </div>
 
-  <div class="grid lg:grid-cols-2 gap-8">
+  
+
+
+  <div class="grid lg:grid-cols-2 gap-8 mobile-grid-1">
 
     <!-- TASKS -->
 
@@ -107,7 +191,7 @@
         <h2 class="text-3xl font-black">Wedding Tasks</h2>
 
         <button onclick="showTaskModal()"
-          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl">
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
           + Add Task
         </button>
       </div>
@@ -116,64 +200,68 @@
 
     </div>
 
-    <!-- VENDORS -->
+    <!-- PURCHASE ITEMS -->
 
-    <div class="glass rounded-3xl p-6 shadow-lg">
+    <div class="glass rounded-3xl p-6 shadow-lg mt-8">
 
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-black">Vendor Tracker</h2>
-
-        <button onclick="showVendorModal()"
-          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl">
-          + Add Vendor
-        </button>
+        <h2 class="text-3xl font-black">Items To Purchase</h2>
       </div>
 
-      <div id="vendorList" class="space-y-4"></div>
+      <div class="flex gap-4 mb-6 mobile-stack">
 
-    </div>
+        <input id="purchaseItemInput"
+          class="flex-1 border rounded-2xl p-3"
+          placeholder="Example: Bible, Reserved Pew Hangs">
 
+        <button onclick="addPurchaseItem()"
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+          Add Item
+        </button>
 
-  <!-- PURCHASE ITEMS -->
-
-  <div class="glass rounded-3xl p-6 shadow-lg mt-8">
-
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-3xl font-black">Items To Purchase</h2>
-    </div>
-
-    <div class="flex gap-4 mb-6">
-
-      <input id="purchaseItemInput"
-        class="flex-1 border rounded-2xl p-3"
-        placeholder="Example: Bible, Reserved Pew Hangs">
-
-      <button onclick="addPurchaseItem()"
-        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl">
-        Add Item
-      </button>
-
+      </div>
 
       <textarea id="purchaseLinks"
-        class="w-full border rounded-2xl p-3 mt-4"
+        class="w-full border rounded-2xl p-3 mb-6"
         rows="4"
         placeholder="Paste product links here (one per line)"></textarea>
 
-    </div>
+      <div id="purchaseList" class="space-y-3"></div>
 
-    <div id="purchaseList" class="space-y-3"></div>
+    </div>
 
   </div>
 
-  <!-- UPCOMING MEETINGS -->
+</div>
 
-  <div class="glass rounded-3xl p-6 shadow-lg mt-8">
+<div id="vendorsTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Vendor Tracker</h2>
+
+      <button onclick="showVendorModal()"
+        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+        + Add Vendor
+      </button>
+    </div>
+
+    <div id="vendorList" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
+<div id="meetingsTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
 
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-black">Upcoming Meetings</h2>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-4 mb-6">
+    <div class="grid md:grid-cols-2 gap-4 mb-6 mobile-grid-1">
 
       <input id="meetingVendor"
         class="border rounded-2xl p-3"
@@ -191,6 +279,11 @@
         type="time"
         class="border rounded-2xl p-3">
 
+      <input id="meetingEndTime"
+        type="time"
+        class="border rounded-2xl p-3"
+        placeholder="End Time">
+
     </div>
 
     <textarea id="meetingDetails"
@@ -199,7 +292,7 @@
       placeholder="Meeting Details"></textarea>
 
     <button onclick="addMeeting()"
-      class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl">
+      class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
       Add Meeting
     </button>
 
@@ -209,7 +302,44 @@
 
 </div>
 
+<div id="timelineTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Wedding Day Timeline</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-4 mobile-grid-1">
+
+      <input id="timelineTime"
+        type="time"
+        class="border rounded-2xl p-3">
+
+      <input id="timelineTitle"
+        class="border rounded-2xl p-3"
+        placeholder="Event Title">
+
+    </div>
+
+    <textarea id="timelineDetails"
+      class="w-full border rounded-2xl p-3 mb-4"
+      rows="3"
+      placeholder="Timeline Details"></textarea>
+
+    <button onclick="addTimelineEvent()"
+      class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+      Add Timeline Event
+    </button>
+
+    <div id="timelineList" class="space-y-4 mt-6"></div>
+
+  </div>
+
+</div>
+
 <!-- TASK MODAL -->
+
 
 <div id="taskModal"
   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
@@ -363,6 +493,27 @@ REALTIME DATABASE RULES:
 }
 */
 
+
+function showTab(tabId) {
+
+  document.querySelectorAll(".tab-content")
+    .forEach(tab => tab.classList.add("hidden"));
+
+  document.getElementById(tabId)
+    .classList.remove("hidden");
+
+  document.querySelectorAll(".tab-btn")
+    .forEach(btn => {
+      btn.classList.remove("bg-[#9caf88]");
+      btn.classList.add("bg-[#d8a7b1]");
+    });
+
+  event.target.classList.remove("bg-[#d8a7b1]");
+  event.target.classList.add("bg-[#9caf88]");
+
+}
+
+
 const firebaseConfig = {
 
   apiKey: "AIzaSyBMcWHdQxCDe6lcq184A0Be7hhTrTqHba8",
@@ -389,11 +540,13 @@ const tasksRef = db.ref("tasks");
 const vendorsRef = db.ref("vendors");
 const purchasesRef = db.ref("purchases");
 const meetingsRef = db.ref("meetings");
+const timelineRef = db.ref("timeline");
 
 let tasks = [];
 let vendors = [];
 let purchases = [];
 let meetings = [];
+let timelineEvents = [];
 
 function updateCountdown() {
 
@@ -513,6 +666,31 @@ meetingsRef.on("value", (snapshot) => {
 
 });
 
+
+timelineRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  timelineEvents = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      timelineEvents.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderTimeline();
+
+});
+
+
 purchasesRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -576,9 +754,14 @@ function renderTasks() {
   completedContainer.innerHTML = "";
   criticalContainer.innerHTML = "";
 
-  tasks.sort((a,b) =>
-    new Date(a.deadline) - new Date(b.deadline)
-  );
+  tasks.sort((a,b) => {
+
+    if(a.deadline === "N/A") return 1;
+    if(b.deadline === "N/A") return -1;
+
+    return new Date(a.deadline) - new Date(b.deadline);
+
+  });
 
   tasks.forEach((task) => {
 
@@ -589,7 +772,7 @@ function renderTasks() {
 
     div.innerHTML = `
 
-      <div class="flex justify-between items-start">
+      <div class="flex justify-between items-start gap-3 mobile-stack">
 
         <div class="flex-1">
 
@@ -726,7 +909,7 @@ function renderVendors() {
 
     div.innerHTML = `
 
-      <div class="flex justify-between items-start">
+      <div class="flex justify-between items-start gap-3 mobile-stack">
 
         <div>
 
@@ -1253,15 +1436,22 @@ function renderMeetings() {
 
   container.innerHTML = "";
 
-  meetings.sort((a,b) =>
-    new Date(a.date + " " + a.time) -
-    new Date(b.date + " " + b.time)
-  );
+  meetings.sort((a,b) => {
+
+    const aDate =
+      new Date(`${a.date} ${a.time}`);
+
+    const bDate =
+      new Date(`${b.date} ${b.time}`);
+
+    return aDate - bDate;
+
+  });
 
   meetings.forEach((meeting) => {
 
     const googleUrl =
-      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${meeting.date.replace(/-/g,'')}T${meeting.time.replace(':','')}00/${meeting.date.replace(/-/g,'')}T${meeting.time.replace(':','')}00&details=${encodeURIComponent(meeting.details || "")}`;
+      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${meeting.date.replace(/-/g,'')}T${meeting.time.replace(':','')}00/${meeting.date.replace(/-/g,'')}T${(meeting.endTime || meeting.time).replace(':','')}00&details=${encodeURIComponent(meeting.details || "")}`;
 
     const div = document.createElement("div");
 
@@ -1270,7 +1460,7 @@ function renderMeetings() {
 
     div.innerHTML = `
 
-      <div class="flex justify-between items-start">
+      <div class="flex justify-between items-start gap-3 mobile-stack">
 
         <div>
 
@@ -1283,7 +1473,7 @@ function renderMeetings() {
           </p>
 
           <p class="text-sm mt-2">
-            ${meeting.date} at ${meeting.time}
+            ${meeting.date} from ${meeting.time} to ${meeting.endTime || meeting.time}
           </p>
 
           ${meeting.details ? `
@@ -1337,6 +1527,9 @@ async function addMeeting() {
     time:
       document.getElementById("meetingTime").value,
 
+    endTime:
+      document.getElementById("meetingEndTime").value,
+
     details:
       document.getElementById("meetingDetails").value
 
@@ -1350,7 +1543,108 @@ async function addMeeting() {
 
   await meetingsRef.push(meeting);
 
+  document.getElementById("meetingVendor").value = "";
+  document.getElementById("meetingTitle").value = "";
+  document.getElementById("meetingDate").value = "";
+  document.getElementById("meetingTime").value = "";
+  document.getElementById("meetingEndTime").value = "";
+  document.getElementById("meetingDetails").value = "";
+
 }
+
+
+
+function renderTimeline() {
+
+  const container =
+    document.getElementById("timelineList");
+
+  container.innerHTML = "";
+
+  timelineEvents.sort((a,b) =>
+    a.time.localeCompare(b.time)
+  );
+
+  timelineEvents.forEach((event) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+
+    div.innerHTML = `
+
+      <div class="flex justify-between items-start gap-3 mobile-stack">
+
+        <div>
+
+          <h3 class="text-xl font-bold">
+            ${event.title}
+          </h3>
+
+          <p class="text-sm mt-2">
+            ${event.time}
+          </p>
+
+          ${event.details ? `
+            <p class="text-sm mt-2">
+              ${event.details}
+            </p>
+          ` : ""}
+
+        </div>
+
+        <button
+          onclick="deleteTimelineEvent('${event.id}')"
+          class="text-red-500 font-bold">
+          ✕
+        </button>
+
+      </div>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+async function addTimelineEvent() {
+
+  const event = {
+
+    time:
+      document.getElementById("timelineTime").value,
+
+    title:
+      document.getElementById("timelineTitle").value,
+
+    details:
+      document.getElementById("timelineDetails").value
+
+  };
+
+  if(!event.title) {
+
+    alert("Please enter an event title.");
+    return;
+  }
+
+  await timelineRef.push(event);
+
+  document.getElementById("timelineTime").value = "";
+  document.getElementById("timelineTitle").value = "";
+  document.getElementById("timelineDetails").value = "";
+
+}
+
+async function deleteTimelineEvent(id) {
+
+  await timelineRef.child(id).remove();
+
+}
+
 
 async function deleteMeeting(id) {
 
@@ -1396,5 +1690,5 @@ async function deleteVendor(id) {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
 </html>
