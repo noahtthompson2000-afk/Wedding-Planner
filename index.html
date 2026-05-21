@@ -31,6 +31,10 @@
 <meta name="NetsparkQuiltingResult" total-length="19050" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
 
 <meta name="NetsparkQuiltingResult" total-length="23684" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="28639" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="30058" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -52,7 +56,27 @@
 
   </div>
 
-  <div class="grid lg:grid-cols-3 gap-6 mb-8">
+  
+  <!-- CRITICAL TASKS -->
+
+  <div class="glass rounded-3xl p-6 shadow-lg mb-8 border-2 border-red-300">
+
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-3xl font-black text-red-600">
+        🚨 Critical Tasks
+      </h2>
+
+      <button onclick="showCompletedModal()"
+        class="bg-gray-800 text-white px-4 py-2 rounded-xl text-sm">
+        Completed Tasks
+      </button>
+    </div>
+
+    <div id="criticalTaskList" class="space-y-3"></div>
+
+  </div>
+
+<div class="grid lg:grid-cols-3 gap-6 mb-8">
 
     <div class="glass rounded-3xl p-6 shadow-lg">
       <h3 class="text-2xl font-black mb-4">Planning Progress</h3>
@@ -173,9 +197,16 @@
         class="w-full border rounded-2xl p-3"
         placeholder="Category">
 
+      
       <input id="taskDeadline"
         type="date"
         class="w-full border rounded-2xl p-3">
+
+      <label class="flex items-center gap-2 text-sm">
+        <input id="taskNoDeadline" type="checkbox">
+        No Deadline (N/A)
+      </label>
+
 
       <select id="taskPriority"
         class="w-full border rounded-2xl p-3">
@@ -199,12 +230,7 @@
 
       </select>
 
-      <input id="taskProgress"
-        type="range"
-        min="0"
-        max="100"
-        value="0"
-        class="w-full">
+      
       <select id="taskVendor"
         class="w-full border rounded-2xl p-3">
         <option value="">Associated Vendor</option>
@@ -271,6 +297,10 @@
       <input id="vendorDeposit"
         class="w-full border rounded-2xl p-3"
         placeholder="Deposit Amount">
+      <input id="vendorWebsite"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Website">
+
 
       <div class="flex gap-4">
 
@@ -371,6 +401,27 @@ function hideVendorModal() {
   document.getElementById("vendorModal").classList.add("hidden");
 }
 
+
+
+function showCompletedModal() {
+
+  document
+    .getElementById("completedModal")
+    .classList
+    .remove("hidden");
+
+}
+
+function hideCompletedModal() {
+
+  document
+    .getElementById("completedModal")
+    .classList
+    .add("hidden");
+
+}
+
+
 /* REALTIME LISTENERS */
 
 tasksRef.on("value", (snapshot) => {
@@ -448,13 +499,51 @@ purchasesRef.on("value", (snapshot) => {
 });
 
 
+
+
+function getStatusColor(status) {
+
+  switch(status) {
+
+    case "Completed":
+      return "border-green-400 bg-green-50";
+
+    case "In Progress":
+      return "border-blue-400 bg-blue-50";
+
+    case "Waiting":
+      return "border-yellow-400 bg-yellow-50";
+
+    case "Researching":
+      return "border-purple-400 bg-purple-50";
+
+    case "Critical":
+      return "border-red-400 bg-red-50";
+
+    default:
+      return "border-gray-200 bg-white";
+  }
+
+}
+
+
 /* RENDER TASKS */
+
 
 function renderTasks() {
 
-  const container = document.getElementById("taskList");
+  const container =
+    document.getElementById("taskList");
+
+  const completedContainer =
+    document.getElementById("completedTaskList");
+
+  const criticalContainer =
+    document.getElementById("criticalTaskList");
 
   container.innerHTML = "";
+  completedContainer.innerHTML = "";
+  criticalContainer.innerHTML = "";
 
   tasks.sort((a,b) =>
     new Date(a.deadline) - new Date(b.deadline)
@@ -464,13 +553,14 @@ function renderTasks() {
 
     const div = document.createElement("div");
 
-    div.className = "bg-white rounded-2xl p-5 shadow";
+    div.className =
+      `rounded-2xl p-5 shadow border-2 ${getStatusColor(task.status)}`;
 
     div.innerHTML = `
 
       <div class="flex justify-between items-start">
 
-        <div>
+        <div class="flex-1">
 
           <h3 class="text-xl font-bold">${task.title}</h3>
 
@@ -493,12 +583,15 @@ function renderTasks() {
           </p>
 
           ${task.fileName ? `
-            <p class="text-sm text-blue-600 mt-1">
+            <a
+              href="${task.fileData || '#'}"
+              target="_blank"
+              class="block text-blue-600 underline mt-2">
               📎 ${task.fileName}
-            </p>
+            </a>
           ` : ""}
 
-          <div class="flex gap-2 mt-3">
+          <div class="flex flex-wrap gap-2 mt-4">
 
             <select
               onchange="updateTaskPriority('${task.id}', this.value)"
@@ -515,13 +608,22 @@ function renderTasks() {
 
             </select>
 
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value="${task.progress}"
-              onchange="updateTaskProgress('${task.id}', this.value)"
-              class="w-32">
+            <select
+              onchange="updateTaskStatus('${task.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              ${['Not Started','Researching','Waiting','In Progress','Almost Done','Completed','Critical']
+                .map(s => `
+                  <option
+                    value="${s}"
+                    ${task.status === s ? 'selected' : ''}>
+                    ${s}
+                  </option>
+                `).join('')}
+
+            </select>
+
+            
 
             <button
               onclick="markTaskComplete('${task.id}')"
@@ -535,7 +637,7 @@ function renderTasks() {
 
         <button
           onclick="deleteTask('${task.id}')"
-          class="text-red-500 font-bold">
+          class="text-red-500 font-bold ml-4">
           ✕
         </button>
 
@@ -550,13 +652,26 @@ function renderTasks() {
 
       </div>
 
-      <p class="text-sm mt-2">
-        ${task.progress}% Complete
-      </p>
-
     `;
 
-    container.appendChild(div);
+    if(task.status === "Completed" || task.completed === true) {
+
+      completedContainer.appendChild(div);
+
+    } else {
+
+      container.appendChild(div);
+
+    }
+
+    if(task.priority === "Critical" ||
+       task.status === "Critical") {
+
+      const criticalCard = div.cloneNode(true);
+
+      criticalContainer.appendChild(criticalCard);
+
+    }
 
   });
 
@@ -564,7 +679,6 @@ function renderTasks() {
 
   renderUpcoming();
 }
-
 /* RENDER VENDORS */
 
 function renderVendors() {
@@ -577,7 +691,8 @@ function renderVendors() {
 
     const div = document.createElement("div");
 
-    div.className = "bg-white rounded-2xl p-5 shadow";
+    div.className =
+      `rounded-2xl p-5 shadow border-2 ${getStatusColor(task.status)}`;
 
     div.innerHTML = `
 
@@ -594,6 +709,15 @@ function renderVendors() {
           <p class="text-sm">${vendor.email}</p>
 
           <p class="text-sm">${vendor.phone}</p>
+
+          ${vendor.website ? `
+            <a
+              href="${vendor.website}"
+              target="_blank"
+              class="text-blue-600 underline text-sm">
+              Visit Website
+            </a>
+          ` : ""}
 
         </div>
 
@@ -670,7 +794,7 @@ function updateStats() {
 function renderUpcoming() {
 
   const upcoming = [...tasks]
-    .filter(t => t.progress < 100)
+    .filter(t => t.status !== "Completed" && !t.completed)
     .slice(0,5);
 
   document.getElementById("upcomingList").innerHTML =
@@ -722,18 +846,26 @@ function renderPurchases() {
           ${item.name}
         </span>
 
-        ${item.links ? `
-          <div class="mt-2 text-sm space-y-1">
-            ${item.links.map(link => `
-              <a
-                href="${link}"
-                target="_blank"
-                class="block text-blue-600 underline break-all">
-                ${link}
-              </a>
-            `).join('')}
-          </div>
-        ` : ""}
+        <button
+          onclick="togglePurchaseDetails('${item.id}')"
+          class="text-blue-600 underline text-sm">
+          View Options
+        </button>
+
+        <div
+          id="purchase-details-${item.id}"
+          class="hidden mt-3 space-y-2">
+
+          ${item.links ? item.links.map((link, index) => `
+            <a
+              href="${link}"
+              target="_blank"
+              class="inline-block bg-rose-500 text-white px-3 py-2 rounded-lg text-sm mr-2">
+              Option ${index + 1}
+            </a>
+          `).join('') : '<p class="text-sm text-gray-400">No links added</p>'}
+
+        </div>
 
 
       </div>
@@ -751,6 +883,18 @@ function renderPurchases() {
   });
 
 }
+
+
+
+function togglePurchaseDetails(id) {
+
+  const el =
+    document.getElementById(`purchase-details-${id}`);
+
+  el.classList.toggle("hidden");
+
+}
+
 
 /* ADD PURCHASE ITEM */
 
@@ -836,7 +980,12 @@ async function addTask() {
 
       category: document.getElementById("taskCategory").value,
 
-      deadline: document.getElementById("taskDeadline").value,
+      
+      deadline:
+        document.getElementById("taskNoDeadline").checked
+          ? "N/A"
+          : document.getElementById("taskDeadline").value,
+
 
       priority: document.getElementById("taskPriority").value,
 
@@ -844,13 +993,24 @@ async function addTask() {
 
       vendor: document.getElementById("taskVendor").value,
 
-      progress: Number(
-        document.getElementById("taskProgress").value
-      ),
+      progress: 0,
 
       completed: false,
 
-      fileName: file ? file.name : ""
+      fileName: file ? file.name : "",
+
+      fileData: file
+        ? await new Promise((resolve) => {
+
+            const reader = new FileReader();
+
+            reader.onload = () =>
+              resolve(reader.result);
+
+            reader.readAsDataURL(file);
+
+          })
+        : ""
 
     };
 
@@ -892,7 +1052,9 @@ async function addVendor() {
 
       phone: document.getElementById("vendorPhone").value,
 
-      deposit: document.getElementById("vendorDeposit").value
+      deposit: document.getElementById("vendorDeposit").value,
+
+      website: document.getElementById("vendorWebsite").value
 
     };
 
@@ -918,6 +1080,28 @@ async function addVendor() {
 
 
 
+
+
+/* UPDATE TASK STATUS */
+
+async function updateTaskStatus(id, value) {
+
+  await tasksRef.child(id).update({
+
+    status: value,
+
+    
+    completed:
+      value === "Completed"
+        ? true
+        : false
+
+
+  });
+
+}
+
+
 /* UPDATE TASK PRIORITY */
 
 async function updateTaskPriority(id, value) {
@@ -928,17 +1112,6 @@ async function updateTaskPriority(id, value) {
 
 }
 
-/* UPDATE TASK PROGRESS */
-
-async function updateTaskProgress(id, value) {
-
-  const progress = Number(value);
-
-  await tasksRef.child(id).update({
-    progress: progress
-  });
-
-}
 
 /* MARK TASK COMPLETE */
 
@@ -971,5 +1144,32 @@ async function deleteVendor(id) {
 
 </script>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000026b4720fa1766cefdaf0c026%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Dc4a66d97b1b3fd9f3d00f3d71d2e15413b97dc09d75fda63e44da774e9fac691%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000088cc720fab81f282b199d0dd%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Daaa1d7a834477f4829c4804d0fc04d5011b4c05ef93692c79e5ec68fafb8a3ad%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000005200720f98274ca1a15fe5d6%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D3523d8e3867d644e4a61bff4644e4688b40c6d6ed3249e31e07e9422f34c8614%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002288720f8726ca941970d604%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0172ea82ea2ca72ec632fbdb6fb4f55f65e0222fb20201f7d2f081953aa4050b%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000026b4720fa1766cefdaf0c026%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Dc4a66d97b1b3fd9f3d00f3d71d2e15413b97dc09d75fda63e44da774e9fac691%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000088cc720fab81f282b199d0dd%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Daaa1d7a834477f4829c4804d0fc04d5011b4c05ef93692c79e5ec68fafb8a3ad%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000005200720f98274ca1a15fe5d6%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D3523d8e3867d644e4a61bff4644e4688b40c6d6ed3249e31e07e9422f34c8614%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002288720f8726ca941970d604%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0172ea82ea2ca72ec632fbdb6fb4f55f65e0222fb20201f7d2f081953aa4050b%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
+<!-- COMPLETED TASKS MODAL -->
+
+<div id="completedModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+
+    <div class="flex justify-between items-center mb-6">
+
+      <h2 class="text-3xl font-black">
+        Completed Tasks
+      </h2>
+
+      <button onclick="hideCompletedModal()"
+        class="bg-gray-200 px-4 py-2 rounded-xl">
+        Close
+      </button>
+
+    </div>
+
+    <div id="completedTaskList" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ef7c720fb8923052a8cf93cc%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0e40b554ab342ae5c7b6ee369093ded94dee83be169f9c2d5766cd2a827fc3e4%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000d4d8720fb2e5a7d9148ff526%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D1356a5c79862a1b4b223274e862e8bc441172c33db8ee8793e670edf38a1775a%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
 </html>
