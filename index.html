@@ -25,6 +25,12 @@
   </style>
 
 <meta name="NetsparkQuiltingResult" total-length="14607" removed="0" rules-found="w2655,w4748,w4749,w3012,w8897,w6565,w6563,w11756,w2577,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="15291" removed="0" rules-found="w2655,w4748,w4749,w3012,w8897,w6565,w6563,w11756,w2577,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="19050" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="23684" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -112,7 +118,39 @@
 
     </div>
 
+  
+  <!-- PURCHASE ITEMS -->
+
+  <div class="glass rounded-3xl p-6 shadow-lg mt-8">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Items To Purchase</h2>
+    </div>
+
+    <div class="flex gap-4 mb-6">
+
+      <input id="purchaseItemInput"
+        class="flex-1 border rounded-2xl p-3"
+        placeholder="Example: Bible, Reserved Pew Hangs">
+
+      <button onclick="addPurchaseItem()"
+        class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-2xl">
+        Add Item
+      </button>
+
+    
+      <textarea id="purchaseLinks"
+        class="w-full border rounded-2xl p-3 mt-4"
+        rows="4"
+        placeholder="Paste product links here (one per line)"></textarea>
+
+
+    </div>
+
+    <div id="purchaseList" class="space-y-3"></div>
+
   </div>
+
 
 </div>
 
@@ -167,6 +205,17 @@
         max="100"
         value="0"
         class="w-full">
+      <select id="taskVendor"
+        class="w-full border rounded-2xl p-3">
+        <option value="">Associated Vendor</option>
+      </select>
+
+      <label class="text-sm font-semibold">Attach File</label>
+
+      <input id="taskFile"
+        type="file"
+        class="w-full border rounded-2xl p-3">
+
 
       <div class="flex gap-4">
 
@@ -280,33 +329,13 @@ const db = firebase.database();
 
 const tasksRef = db.ref("tasks");
 const vendorsRef = db.ref("vendors");
+const purchasesRef = db.ref("purchases");
 
 let tasks = [];
 let vendors = [];
+let purchases = [];
 
-/* SEEDED TASKS */
 
-const seededTasks = [
-
-{
-  title: "Marriage license appointment",
-  category: "Legal",
-  deadline: "2026-06-10",
-  priority: "Critical",
-  status: "Not Started",
-  progress: 0
-},
-
-{
-  title: "Order welcome sign",
-  category: "Decor",
-  deadline: "2026-06-12",
-  priority: "Medium",
-  status: "Not Started",
-  progress: 0
-}
-
-];
 
 /* COUNTDOWN */
 
@@ -387,24 +416,37 @@ vendorsRef.on("value", (snapshot) => {
   }
 
   renderVendors();
+  populateVendorDropdown();
 
 });
 
-/* SEED DATABASE */
 
-tasksRef.once("value", (snapshot) => {
 
-  if(!snapshot.exists()) {
+/* PURCHASE LISTENER */
 
-    seededTasks.forEach((task) => {
+purchasesRef.on("value", (snapshot) => {
 
-      tasksRef.push(task);
+  const data = snapshot.val();
+
+  purchases = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      purchases.push({
+        id: key,
+        ...data[key]
+      });
 
     });
 
   }
 
+  renderPurchases();
+
 });
+
 
 /* RENDER TASKS */
 
@@ -445,6 +487,49 @@ function renderTasks() {
           <p class="text-sm">
             Status: ${task.status}
           </p>
+
+          <p class="text-sm">
+            Vendor: ${task.vendor || "None"}
+          </p>
+
+          ${task.fileName ? `
+            <p class="text-sm text-blue-600 mt-1">
+              📎 ${task.fileName}
+            </p>
+          ` : ""}
+
+          <div class="flex gap-2 mt-3">
+
+            <select
+              onchange="updateTaskPriority('${task.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              ${['Low','Medium','High','Critical']
+                .map(p => `
+                  <option
+                    value="${p}"
+                    ${task.priority === p ? 'selected' : ''}>
+                    ${p}
+                  </option>
+                `).join('')}
+
+            </select>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="${task.progress}"
+              onchange="updateTaskProgress('${task.id}', this.value)"
+              class="w-32">
+
+            <button
+              onclick="markTaskComplete('${task.id}')"
+              class="bg-green-500 text-white px-2 py-1 rounded text-xs">
+              Complete
+            </button>
+
+          </div>
 
         </div>
 
@@ -530,6 +615,31 @@ function renderVendors() {
     vendors.length;
 }
 
+
+
+/* POPULATE VENDOR DROPDOWN */
+
+function populateVendorDropdown() {
+
+  const select =
+    document.getElementById("taskVendor");
+
+  select.innerHTML =
+    '<option value="">Associated Vendor</option>';
+
+  vendors.forEach((vendor) => {
+
+    select.innerHTML += `
+      <option value="${vendor.name}">
+        ${vendor.name}
+      </option>
+    `;
+
+  });
+
+}
+
+
 /* STATS */
 
 function updateStats() {
@@ -579,11 +689,146 @@ function renderUpcoming() {
     `).join("");
 }
 
+
+
+/* RENDER PURCHASES */
+
+function renderPurchases() {
+
+  const container =
+    document.getElementById("purchaseList");
+
+  container.innerHTML = "";
+
+  purchases.forEach((item) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "bg-white rounded-2xl p-4 shadow flex justify-between items-center";
+
+    div.innerHTML = `
+
+      <div class="flex items-center gap-3">
+
+        <input
+          type="checkbox"
+          ${item.purchased ? "checked" : ""}
+          onchange="togglePurchase('${item.id}', this.checked)"
+          class="w-5 h-5">
+
+
+        <span class="${item.purchased ? 'line-through text-gray-400' : ''}">
+          ${item.name}
+        </span>
+
+        ${item.links ? `
+          <div class="mt-2 text-sm space-y-1">
+            ${item.links.map(link => `
+              <a
+                href="${link}"
+                target="_blank"
+                class="block text-blue-600 underline break-all">
+                ${link}
+              </a>
+            `).join('')}
+          </div>
+        ` : ""}
+
+
+      </div>
+
+      <button
+        onclick="deletePurchase('${item.id}')"
+        class="text-red-500 font-bold">
+        ✕
+      </button>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+/* ADD PURCHASE ITEM */
+
+async function addPurchaseItem() {
+
+  try {
+
+    const input =
+      document.getElementById("purchaseItemInput");
+
+    const name = input.value.trim();
+
+    if(!name) {
+
+      alert("Please enter an item.");
+      return;
+    }
+
+    const linksRaw =
+      document.getElementById("purchaseLinks").value;
+
+    const links =
+      linksRaw
+        .split("\n")
+        .map(link => link.trim())
+        .filter(link => link);
+
+    await purchasesRef.push({
+
+      name: name,
+      purchased: false,
+      links: links
+
+    });
+
+    document.getElementById("purchaseLinks").value = "";
+
+    input.value = "";
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Firebase Error: " + error.message);
+  }
+
+}
+
+/* TOGGLE PURCHASE */
+
+async function togglePurchase(id, value) {
+
+  await purchasesRef.child(id).update({
+    purchased: value
+  });
+
+}
+
+/* DELETE PURCHASE */
+
+async function deletePurchase(id) {
+
+  await purchasesRef.child(id).remove();
+
+}
+
+
 /* ADD TASK */
 
 async function addTask() {
 
   try {
+
+    const fileInput =
+      document.getElementById("taskFile");
+
+    const file =
+      fileInput.files[0];
 
     const task = {
 
@@ -597,9 +842,15 @@ async function addTask() {
 
       status: document.getElementById("taskStatus").value,
 
+      vendor: document.getElementById("taskVendor").value,
+
       progress: Number(
         document.getElementById("taskProgress").value
-      )
+      ),
+
+      completed: false,
+
+      fileName: file ? file.name : ""
 
     };
 
@@ -665,6 +916,45 @@ async function addVendor() {
   }
 }
 
+
+
+/* UPDATE TASK PRIORITY */
+
+async function updateTaskPriority(id, value) {
+
+  await tasksRef.child(id).update({
+    priority: value
+  });
+
+}
+
+/* UPDATE TASK PROGRESS */
+
+async function updateTaskProgress(id, value) {
+
+  const progress = Number(value);
+
+  await tasksRef.child(id).update({
+    progress: progress
+  });
+
+}
+
+/* MARK TASK COMPLETE */
+
+async function markTaskComplete(id) {
+
+  await tasksRef.child(id).update({
+
+    progress: 100,
+    status: "Completed",
+    completed: true
+
+  });
+
+}
+
+
 /* DELETE TASK */
 
 async function deleteTask(id) {
@@ -681,5 +971,5 @@ async function deleteVendor(id) {
 
 </script>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000026b4720fa1766cefdaf0c026%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Dc4a66d97b1b3fd9f3d00f3d71d2e15413b97dc09d75fda63e44da774e9fac691%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000026b4720fa1766cefdaf0c026%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Dc4a66d97b1b3fd9f3d00f3d71d2e15413b97dc09d75fda63e44da774e9fac691%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000088cc720fab81f282b199d0dd%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Daaa1d7a834477f4829c4804d0fc04d5011b4c05ef93692c79e5ec68fafb8a3ad%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000005200720f98274ca1a15fe5d6%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D3523d8e3867d644e4a61bff4644e4688b40c6d6ed3249e31e07e9422f34c8614%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002288720f8726ca941970d604%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0172ea82ea2ca72ec632fbdb6fb4f55f65e0222fb20201f7d2f081953aa4050b%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
 </html>
