@@ -19,28 +19,13 @@
     }
 
     .glass {
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(12px);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
     }
   </style>
 
-<meta name="NetsparkQuiltingResult" total-length="14607" removed="0" rules-found="w2655,w4748,w4749,w3012,w8897,w6565,w6563,w11756,w2577,w3081" />
 
-<meta name="NetsparkQuiltingResult" total-length="15291" removed="0" rules-found="w2655,w4748,w4749,w3012,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="19050" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="23684" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="28639" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="30058" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="32049" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="38556" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="39916" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+<meta name="NetsparkQuiltingResult" total-length="29540" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -62,7 +47,7 @@
 
   </div>
 
-  
+
   <!-- CRITICAL TASKS -->
 
   <div class="glass rounded-3xl p-6 shadow-lg mb-8 border-2 border-red-300">
@@ -148,7 +133,7 @@
 
     </div>
 
-  
+
   <!-- PURCHASE ITEMS -->
 
   <div class="glass rounded-3xl p-6 shadow-lg mt-8">
@@ -168,20 +153,17 @@
         Add Item
       </button>
 
-    
+
       <textarea id="purchaseLinks"
         class="w-full border rounded-2xl p-3 mt-4"
         rows="4"
         placeholder="Paste product links here (one per line)"></textarea>
-
 
     </div>
 
     <div id="purchaseList" class="space-y-3"></div>
 
   </div>
-
-
 
   <!-- UPCOMING MEETINGS -->
 
@@ -225,7 +207,6 @@
 
   </div>
 
-
 </div>
 
 <!-- TASK MODAL -->
@@ -247,7 +228,7 @@
         class="w-full border rounded-2xl p-3"
         placeholder="Category">
 
-      
+
       <input id="taskDeadline"
         type="date"
         class="w-full border rounded-2xl p-3">
@@ -256,7 +237,6 @@
         <input id="taskNoDeadline" type="checkbox">
         No Deadline (N/A)
       </label>
-
 
       <select id="taskPriority"
         class="w-full border rounded-2xl p-3">
@@ -280,7 +260,7 @@
 
       </select>
 
-      
+
       <select id="taskVendor"
         class="w-full border rounded-2xl p-3">
         <option value="">Associated Vendor</option>
@@ -291,7 +271,6 @@
       <input id="taskFile"
         type="file"
         class="w-full border rounded-2xl p-3">
-
 
       <div class="flex gap-4">
 
@@ -350,7 +329,6 @@
       <input id="vendorWebsite"
         class="w-full border rounded-2xl p-3"
         placeholder="Website">
-
 
       <div class="flex gap-4">
 
@@ -417,10 +395,6 @@ let vendors = [];
 let purchases = [];
 let meetings = [];
 
-
-
-/* COUNTDOWN */
-
 function updateCountdown() {
 
   const weddingDate = new Date("2026-07-09");
@@ -434,8 +408,6 @@ function updateCountdown() {
 }
 
 updateCountdown();
-
-/* MODALS */
 
 function showTaskModal() {
   document.getElementById("taskModal").classList.remove("hidden");
@@ -452,8 +424,6 @@ function showVendorModal() {
 function hideVendorModal() {
   document.getElementById("vendorModal").classList.add("hidden");
 }
-
-
 
 function showCompletedModal() {
 
@@ -472,9 +442,6 @@ function hideCompletedModal() {
     .add("hidden");
 
 }
-
-
-/* REALTIME LISTENERS */
 
 tasksRef.on("value", (snapshot) => {
 
@@ -523,12 +490,6 @@ vendorsRef.on("value", (snapshot) => {
 
 });
 
-
-
-
-
-/* MEETINGS LISTENER */
-
 meetingsRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -552,9 +513,6 @@ meetingsRef.on("value", (snapshot) => {
 
 });
 
-
-/* PURCHASE LISTENER */
-
 purchasesRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -577,9 +535,6 @@ purchasesRef.on("value", (snapshot) => {
   renderPurchases();
 
 });
-
-
-
 
 function getStatusColor(status) {
 
@@ -605,10 +560,6 @@ function getStatusColor(status) {
   }
 
 }
-
-
-/* RENDER TASKS */
-
 
 function renderTasks() {
 
@@ -703,7 +654,7 @@ function renderTasks() {
 
             </select>
 
-            
+
 
             <button
               onclick="markTaskComplete('${task.id}')"
@@ -729,7 +680,7 @@ function renderTasks() {
 
       </div>
 
-      
+
 
     `;
 
@@ -760,9 +711,6 @@ function renderTasks() {
 
   renderUpcoming();
 }
-/* RENDER VENDORS */
-
-
 function renderVendors() {
 
   const container = document.getElementById("vendorList");
@@ -834,11 +782,6 @@ function renderVendors() {
     vendors.length;
 }
 
-
-
-
-/* POPULATE VENDOR DROPDOWN */
-
 function populateVendorDropdown() {
 
   const select =
@@ -859,18 +802,12 @@ function populateVendorDropdown() {
 
 }
 
-
-/* STATS */
-
 function updateStats() {
 
   const completed =
-    tasks.filter(t => t.progress >= 100).length;
+    tasks.filter(t => t.completed).length;
 
-  const percent =
-    tasks.length > 0
-      ? Math.round((completed / tasks.length) * 100)
-      : 0;
+  const percent = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
 
   document.getElementById("taskCount").textContent =
     tasks.length;
@@ -884,8 +821,6 @@ function updateStats() {
   document.getElementById("progressText").textContent =
     percent + "% Complete";
 }
-
-/* UPCOMING */
 
 function renderUpcoming() {
 
@@ -908,10 +843,6 @@ function renderUpcoming() {
 
     `).join("");
 }
-
-
-
-/* RENDER PURCHASES */
 
 function renderPurchases() {
 
@@ -936,7 +867,6 @@ function renderPurchases() {
           ${item.purchased ? "checked" : ""}
           onchange="togglePurchase('${item.id}', this.checked)"
           class="w-5 h-5">
-
 
         <span class="${item.purchased ? 'line-through text-gray-400' : ''}">
           ${item.name}
@@ -969,9 +899,7 @@ function renderPurchases() {
 
         </div>
 
-
       </div>
-
 
       <div class="flex gap-2 mt-2">
 
@@ -989,7 +917,6 @@ function renderPurchases() {
 
       </div>
 
-
     `;
 
     container.appendChild(div);
@@ -997,8 +924,6 @@ function renderPurchases() {
   });
 
 }
-
-
 
 function togglePurchaseDetails(id) {
 
@@ -1008,10 +933,6 @@ function togglePurchaseDetails(id) {
   el.classList.toggle("hidden");
 
 }
-
-
-
-
 
 async function editPurchase(id) {
 
@@ -1063,10 +984,6 @@ async function editPurchase(id) {
 
 }
 
-
-
-/* ADD PURCHASE ITEM */
-
 async function addPurchaseItem() {
 
   try {
@@ -1112,8 +1029,6 @@ async function addPurchaseItem() {
 
 }
 
-/* TOGGLE PURCHASE */
-
 async function togglePurchase(id, value) {
 
   await purchasesRef.child(id).update({
@@ -1122,16 +1037,11 @@ async function togglePurchase(id, value) {
 
 }
 
-/* DELETE PURCHASE */
-
 async function deletePurchase(id) {
 
   await purchasesRef.child(id).remove();
 
 }
-
-
-/* ADD TASK */
 
 async function addTask() {
 
@@ -1149,12 +1059,11 @@ async function addTask() {
 
       category: document.getElementById("taskCategory").value,
 
-      
+
       deadline:
         document.getElementById("taskNoDeadline").checked
           ? "N/A"
           : document.getElementById("taskDeadline").value,
-
 
       priority: document.getElementById("taskPriority").value,
 
@@ -1203,8 +1112,6 @@ async function addTask() {
   }
 }
 
-/* ADD VENDOR */
-
 async function addVendor() {
 
   try {
@@ -1247,31 +1154,21 @@ async function addVendor() {
   }
 }
 
-
-
-
-
-/* UPDATE TASK STATUS */
-
 async function updateTaskStatus(id, value) {
 
   await tasksRef.child(id).update({
 
     status: value,
 
-    
+
     completed:
       value === "Completed"
         ? true
         : false
 
-
   });
 
 }
-
-
-/* UPDATE TASK PRIORITY */
 
 async function updateTaskPriority(id, value) {
 
@@ -1281,25 +1178,17 @@ async function updateTaskPriority(id, value) {
 
 }
 
-
-/* MARK TASK COMPLETE */
-
 async function markTaskComplete(id) {
 
   await tasksRef.child(id).update({
 
-    progress: 100,
+
     status: "Completed",
     completed: true
 
   });
 
 }
-
-
-
-
-/* EDIT TASK */
 
 async function editTask(id) {
 
@@ -1329,8 +1218,6 @@ async function editTask(id) {
 
 }
 
-/* EDIT VENDOR */
-
 async function editVendor(id) {
 
   const vendor =
@@ -1358,8 +1245,6 @@ async function editVendor(id) {
   });
 
 }
-
-/* RENDER MEETINGS */
 
 function renderMeetings() {
 
@@ -1436,8 +1321,6 @@ function renderMeetings() {
 
 }
 
-/* ADD MEETING */
-
 async function addMeeting() {
 
   const meeting = {
@@ -1469,23 +1352,16 @@ async function addMeeting() {
 
 }
 
-/* DELETE MEETING */
-
 async function deleteMeeting(id) {
 
   await meetingsRef.child(id).remove();
 
 }
 
-
-/* DELETE TASK */
-
 async function deleteTask(id) {
 
   await tasksRef.child(id).remove();
 }
-
-/* DELETE VENDOR */
 
 async function deleteVendor(id) {
 
@@ -1494,7 +1370,6 @@ async function deleteVendor(id) {
 
 </script>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000026b4720fa1766cefdaf0c026%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Dc4a66d97b1b3fd9f3d00f3d71d2e15413b97dc09d75fda63e44da774e9fac691%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000088cc720fab81f282b199d0dd%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3Daaa1d7a834477f4829c4804d0fc04d5011b4c05ef93692c79e5ec68fafb8a3ad%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000005200720f98274ca1a15fe5d6%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D3523d8e3867d644e4a61bff4644e4688b40c6d6ed3249e31e07e9422f34c8614%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002288720f8726ca941970d604%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0172ea82ea2ca72ec632fbdb6fb4f55f65e0222fb20201f7d2f081953aa4050b%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
 <!-- COMPLETED TASKS MODAL -->
 
 <div id="completedModal"
@@ -1521,5 +1396,5 @@ async function deleteVendor(id) {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ef7c720fb8923052a8cf93cc%26ts%3D494260%26p%3Dfs%26cid%3D1%26sig%3D0e40b554ab342ae5c7b6ee369093ded94dee83be169f9c2d5766cd2a827fc3e4%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000d4d8720fb2e5a7d9148ff526%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D1356a5c79862a1b4b223274e862e8bc441172c33db8ee8793e670edf38a1775a%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000b5ac720f966879bdfd812240%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D09d05d42beb1fa6e7184cff55d2afb660af429ef5c2504d3379c5fd348081a8d%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000be0c720f809d2c17f27c9d17%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8d51525a4d919171baccbc06df46c3f54c04bcb9f8d8006beeb3ad0f967ed867%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000008f4720f8eec6995d6eb2696%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Dfb2484e0af70ea50daa6a0b859d88d1bc8a0a1eb54e3159777e4fc70fa15cdda%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
 </html>
