@@ -81,6 +81,14 @@
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
 <meta name="NetsparkQuiltingResult" total-length="44614" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="47311" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="51253" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="57917" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="59876" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -217,12 +225,17 @@
           class="flex-1 border rounded-2xl p-3"
           placeholder="Example: Bible, Reserved Pew Hangs">
 
-        <button onclick="addPurchaseItem()"
+        <button onclick="showPurchaseModal()"
           class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
           Add Item
         </button>
 
       </div>
+
+      <textarea id="purchaseNotes"
+        class="w-full border rounded-2xl p-3 mb-4"
+        rows="3"
+        placeholder="Helpful Notes"></textarea>
 
       <textarea id="purchaseLinks"
         class="w-full border rounded-2xl p-3 mb-6"
@@ -262,42 +275,14 @@
 
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-black">Upcoming Meetings</h2>
+
+      <button onclick="showMeetingModal()"
+        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+        + Add Meeting
+      </button>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-4 mb-6 mobile-grid-1">
-
-      <input id="meetingVendor"
-        class="border rounded-2xl p-3"
-        placeholder="Vendor Name">
-
-      <input id="meetingTitle"
-        class="border rounded-2xl p-3"
-        placeholder="Meeting Title">
-
-      <input id="meetingDate"
-        type="date"
-        class="border rounded-2xl p-3">
-
-      <input id="meetingTime"
-        type="time"
-        class="border rounded-2xl p-3">
-
-      <input id="meetingEndTime"
-        type="time"
-        class="border rounded-2xl p-3"
-        placeholder="End Time">
-
-    </div>
-
-    <textarea id="meetingDetails"
-      class="w-full border rounded-2xl p-3 mb-4"
-      rows="3"
-      placeholder="Meeting Details"></textarea>
-
-    <button onclick="addMeeting()"
-      class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
-      Add Meeting
-    </button>
+    
 
     <div id="meetingList" class="space-y-4 mt-6"></div>
 
@@ -311,31 +296,14 @@
 
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-3xl font-black">Wedding Day Timeline</h2>
-    </div>
 
-    <div class="grid md:grid-cols-2 gap-4 mb-4 mobile-grid-1">
-
-      <input id="timelineTime"
-        type="time"
-        class="border rounded-2xl p-3">
-
-      <input id="timelineTitle"
-        class="border rounded-2xl p-3"
-        placeholder="Event Title">
-
-    </div>
-
-    <textarea id="timelineDetails"
-      class="w-full border rounded-2xl p-3 mb-4"
-      rows="3"
-      placeholder="Timeline Details"></textarea>
-
-    <div class="flex gap-4 mobile-stack">
-
-      <button onclick="addTimelineEvent()"
+      <button onclick="showTimelineModal()"
         class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
-        Add Timeline Event
+        + Add Timeline Event
       </button>
+    </div>
+
+    
 
       <button onclick="printSchedule()"
         class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl mobile-full">
@@ -356,9 +324,9 @@
 <div id="taskModal"
   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
 
-  <div class="bg-white rounded-3xl p-6 w-full max-w-lg">
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
-    <h2 class="text-3xl font-black mb-6">Add Wedding Task</h2>
+    <h2 id="taskModalTitle" class="text-3xl font-black mb-6">Add Wedding Task</h2>
 
     <div class="space-y-4">
 
@@ -416,7 +384,7 @@
 
       <div class="flex gap-4">
 
-        <button onclick="addTask()"
+        <button onclick="saveTask()"
           class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
           Save Task
         </button>
@@ -439,9 +407,9 @@
 <div id="vendorModal"
   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
 
-  <div class="bg-white rounded-3xl p-6 w-full max-w-lg">
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
-    <h2 class="text-3xl font-black mb-6">Add Vendor</h2>
+    <h2 id="vendorModalTitle" class="text-3xl font-black mb-6">Add Vendor</h2>
 
     <div class="space-y-4">
 
@@ -474,12 +442,176 @@
 
       <div class="flex gap-4">
 
-        <button onclick="addVendor()"
+        <button onclick="saveVendor()"
           class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
           Save Vendor
         </button>
 
         <button onclick="hideVendorModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- PURCHASE MODAL -->
+
+<div id="purchaseModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="purchaseModalTitle" class="text-3xl font-black mb-6">
+      Add Purchase Item
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="purchaseModalName"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Item Name">
+
+      <textarea id="purchaseModalNotes"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Helpful Notes"></textarea>
+
+      <textarea id="purchaseModalLinks"
+        class="w-full border rounded-2xl p-3"
+        rows="5"
+        placeholder="Paste links (one per line)"></textarea>
+
+      <div class="flex gap-4">
+
+        <button onclick="savePurchaseItem()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Item
+        </button>
+
+        <button onclick="hidePurchaseModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+<!-- MEETING MODAL -->
+
+<div id="meetingModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="meetingModalTitle" class="text-3xl font-black mb-6">
+      Add Meeting
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="meetingModalVendor"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Vendor Name">
+
+      <input id="meetingModalTitleInput"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Meeting Title">
+
+      <input id="meetingModalDate"
+        type="date"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="meetingModalTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="meetingModalEndTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <textarea id="meetingModalDetails"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Meeting Details"></textarea>
+
+      <div class="flex gap-4">
+
+        <button onclick="saveMeeting()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Meeting
+        </button>
+
+        <button onclick="hideMeetingModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- TIMELINE MODAL -->
+
+<div id="timelineModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="timelineModalTitle" class="text-3xl font-black mb-6">
+      Add Timeline Event
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="timelineModalTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="timelineModalTitleInput"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Event Title">
+
+      <select id="timelineModalType"
+        class="w-full border rounded-2xl p-3">
+        <option value="Ceremony">Ceremony</option>
+        <option value="Reception">Reception</option>
+      </select>
+
+      <textarea id="timelineModalDetails"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Timeline Details"></textarea>
+
+      <div class="flex gap-4">
+
+        <button onclick="saveTimelineEvent()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Event
+        </button>
+
+        <button onclick="hideTimelineModal()"
           class="bg-gray-200 flex-1 py-3 rounded-2xl">
           Cancel
         </button>
@@ -560,6 +692,12 @@ let purchases = [];
 let meetings = [];
 let timelineEvents = [];
 
+let editingTaskId = null;
+let editingVendorId = null;
+let editingPurchaseId = null;
+let editingMeetingId = null;
+let editingTimelineId = null;
+
 function updateCountdown() {
 
   const weddingDate = new Date("2026-07-09");
@@ -574,21 +712,109 @@ function updateCountdown() {
 
 updateCountdown();
 
-function showTaskModal() {
+
+function clearTaskForm() {
+
+  document.getElementById("taskTitle").value = "";
+  document.getElementById("taskCategory").value = "";
+  document.getElementById("taskDeadline").value = "";
+  document.getElementById("taskNoDeadline").checked = false;
+  document.getElementById("taskPriority").value = "Low";
+  document.getElementById("taskStatus").value = "Not Started";
+  document.getElementById("taskVendor").value = "";
+  document.getElementById("taskFile").value = "";
+
+}
+
+function showTaskModal(task = null) {
+
+  editingTaskId = task ? task.id : null;
+
+  document.getElementById("taskModalTitle").textContent =
+    task ? "Edit Wedding Task" : "Add Wedding Task";
+
+  if(task) {
+
+    document.getElementById("taskTitle").value = task.title || "";
+    document.getElementById("taskCategory").value = task.category || "";
+
+    if(task.deadline === "N/A") {
+      document.getElementById("taskNoDeadline").checked = true;
+      document.getElementById("taskDeadline").value = "";
+    } else {
+      document.getElementById("taskNoDeadline").checked = false;
+      document.getElementById("taskDeadline").value = task.deadline || "";
+    }
+
+    document.getElementById("taskPriority").value = task.priority || "Low";
+    document.getElementById("taskStatus").value = task.status || "Not Started";
+    document.getElementById("taskVendor").value = task.vendor || "";
+
+  } else {
+
+    clearTaskForm();
+
+  }
+
   document.getElementById("taskModal").classList.remove("hidden");
 }
 
 function hideTaskModal() {
+
   document.getElementById("taskModal").classList.add("hidden");
+
+  editingTaskId = null;
+
+  clearTaskForm();
 }
 
-function showVendorModal() {
+function clearVendorForm() {
+
+  document.getElementById("vendorName").value = "";
+  document.getElementById("vendorCategory").value = "";
+  document.getElementById("vendorContact").value = "";
+  document.getElementById("vendorEmail").value = "";
+  document.getElementById("vendorPhone").value = "";
+  document.getElementById("vendorDeposit").value = "";
+  document.getElementById("vendorWebsite").value = "";
+
+}
+
+function showVendorModal(vendor = null) {
+
+  editingVendorId = vendor ? vendor.id : null;
+
+  document.getElementById("vendorModalTitle").textContent =
+    vendor ? "Edit Vendor" : "Add Vendor";
+
+  if(vendor) {
+
+    document.getElementById("vendorName").value = vendor.name || "";
+    document.getElementById("vendorCategory").value = vendor.category || "";
+    document.getElementById("vendorContact").value = vendor.contact || "";
+    document.getElementById("vendorEmail").value = vendor.email || "";
+    document.getElementById("vendorPhone").value = vendor.phone || "";
+    document.getElementById("vendorDeposit").value = vendor.deposit || "";
+    document.getElementById("vendorWebsite").value = vendor.website || "";
+
+  } else {
+
+    clearVendorForm();
+
+  }
+
   document.getElementById("vendorModal").classList.remove("hidden");
 }
 
 function hideVendorModal() {
+
   document.getElementById("vendorModal").classList.add("hidden");
+
+  editingVendorId = null;
+
+  clearVendorForm();
 }
+
 
 function showCompletedModal() {
 
@@ -793,7 +1019,7 @@ function renderTasks() {
           <p class="text-gray-500">${task.category}</p>
 
           <p class="text-sm mt-2">
-            Deadline: ${task.deadline}
+            Deadline: ${task.deadline === "N/A" ? "N/A" : formatReadableDate(task.deadline)}
           </p>
 
           <p class="text-sm">
@@ -1031,7 +1257,7 @@ function renderUpcoming() {
         <strong>${task.title}</strong><br>
 
         <span class="text-gray-500 text-sm">
-          ${task.deadline}
+          ${task.deadline === "N/A" ? "N/A" : formatReadableDate(task.deadline)}
         </span>
 
       </li>
@@ -1129,100 +1355,108 @@ function togglePurchaseDetails(id) {
 
 }
 
-async function editPurchase(id) {
+
+function showPurchaseModal(item = null) {
+
+  editingPurchaseId = item ? item.id : null;
+
+  document.getElementById("purchaseModalTitle").textContent =
+    item ? "Edit Purchase Item" : "Add Purchase Item";
+
+  document.getElementById("purchaseModalName").value =
+    item?.name || "";
+
+  document.getElementById("purchaseModalNotes").value =
+    item?.notes || "";
+
+  document.getElementById("purchaseModalLinks").value =
+    item?.links ? item.links.join("\\n") : "";
+
+  document.getElementById("purchaseModal")
+    .classList.remove("hidden");
+}
+
+function hidePurchaseModal() {
+
+  document.getElementById("purchaseModal")
+    .classList.add("hidden");
+
+  editingPurchaseId = null;
+
+  document.getElementById("purchaseModalName").value = "";
+  document.getElementById("purchaseModalNotes").value = "";
+  document.getElementById("purchaseModalLinks").value = "";
+}
+
+function editPurchase(id) {
 
   const item =
     purchases.find(p => p.id === id);
 
   if(!item) return;
 
-  const newName =
-    prompt(
-      "Item Name:",
-      item.name
-    );
-
-  if(newName === null) return;
-
-  const notes =
-    prompt(
-      "Helpful Notes:",
-      item.notes || ""
-    );
-
-  const existingLinks =
-    item.links
-      ? item.links.join("\n")
-      : "";
-
-  const newLinks =
-    prompt(
-      "Edit/Add Links (one per line):",
-      existingLinks
-    );
-
-  const links =
-    newLinks
-      ? newLinks
-          .split("\n")
-          .map(link => link.trim())
-          .filter(link => link)
-      : [];
-
-  await purchasesRef.child(id).update({
-
-    name: newName,
-    notes: notes,
-    links: links
-
-  });
-
+  showPurchaseModal(item);
 }
 
-async function addPurchaseItem() {
+async function savePurchaseItem() {
 
-  try {
+  const name =
+    editingPurchaseId
+      ? document.getElementById("purchaseModalName").value.trim()
+      : document.getElementById("purchaseItemInput").value.trim();
 
-    const input =
-      document.getElementById("purchaseItemInput");
+  if(!name) {
 
-    const name = input.value.trim();
-
-    if(!name) {
-
-      alert("Please enter an item.");
-      return;
-    }
-
-    const linksRaw =
-      document.getElementById("purchaseLinks").value;
-
-    const links =
-      linksRaw
-        .split("\n")
-        .map(link => link.trim())
-        .filter(link => link);
-
-    await purchasesRef.push({
-
-      name: name,
-      purchased: false,
-      links: links
-
-    });
-
-    document.getElementById("purchaseLinks").value = "";
-
-    input.value = "";
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert("Firebase Error: " + error.message);
+    alert("Please enter an item name.");
+    return;
   }
 
+  const notes =
+    editingPurchaseId
+      ? document.getElementById("purchaseModalNotes").value
+      : document.getElementById("purchaseNotes").value;
+
+  const linksRaw =
+    editingPurchaseId
+      ? document.getElementById("purchaseModalLinks").value
+      : document.getElementById("purchaseLinks").value;
+
+  const links =
+    linksRaw
+      .split("\\n")
+      .map(link => link.trim())
+      .filter(link => link);
+
+  const purchaseData = {
+    name,
+    notes,
+    links
+  };
+
+  if(editingPurchaseId) {
+
+    await purchasesRef
+      .child(editingPurchaseId)
+      .update(purchaseData);
+
+  } else {
+
+    purchaseData.purchased = false;
+
+    await purchasesRef.push(purchaseData);
+  }
+
+
+  document.getElementById("purchaseItemInput").value = "";
+  document.getElementById("purchaseNotes").value = "";
+  document.getElementById("purchaseLinks").value = "";
+
+  hidePurchaseModal();
+
 }
+
+
+
 
 async function togglePurchase(id, value) {
 
@@ -1238,22 +1472,20 @@ async function deletePurchase(id) {
 
 }
 
-async function addTask() {
+
+async function saveTask() {
 
   try {
 
-    const fileInput =
-      document.getElementById("taskFile");
+    const fileInput = document.getElementById("taskFile");
 
-    const file =
-      fileInput.files[0];
+    const file = fileInput.files[0];
 
     const task = {
 
       title: document.getElementById("taskTitle").value,
 
       category: document.getElementById("taskCategory").value,
-
 
       deadline:
         document.getElementById("taskNoDeadline").checked
@@ -1268,24 +1500,27 @@ async function addTask() {
 
       progress: 0,
 
-      completed: false,
-
-      fileName: file ? file.name : "",
-
-      fileData: file
-        ? await new Promise((resolve) => {
-
-            const reader = new FileReader();
-
-            reader.onload = () =>
-              resolve(reader.result);
-
-            reader.readAsDataURL(file);
-
-          })
-        : ""
+      completed:
+        document.getElementById("taskStatus").value === "Completed"
 
     };
+
+    if(file) {
+
+      task.fileName = file.name;
+
+      task.fileData = await new Promise((resolve) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () =>
+          resolve(reader.result);
+
+        reader.readAsDataURL(file);
+
+      });
+
+    }
 
     if(!task.title) {
 
@@ -1293,9 +1528,28 @@ async function addTask() {
       return;
     }
 
-    await tasksRef.push(task);
+    if(editingTaskId) {
 
-    alert("Task saved!");
+      const existingTask =
+        tasks.find(t => t.id === editingTaskId);
+
+      if(existingTask && !file) {
+
+        task.fileName = existingTask.fileName || "";
+        task.fileData = existingTask.fileData || "";
+
+      }
+
+      await tasksRef.child(editingTaskId).update(task);
+
+    } else {
+
+      task.fileName = task.fileName || "";
+      task.fileData = task.fileData || "";
+
+      await tasksRef.push(task);
+
+    }
 
     hideTaskModal();
 
@@ -1307,7 +1561,9 @@ async function addTask() {
   }
 }
 
-async function addVendor() {
+
+
+async function saveVendor() {
 
   try {
 
@@ -1335,9 +1591,15 @@ async function addVendor() {
       return;
     }
 
-    await vendorsRef.push(vendor);
+    if(editingVendorId) {
 
-    alert("Vendor saved!");
+      await vendorsRef.child(editingVendorId).update(vendor);
+
+    } else {
+
+      await vendorsRef.push(vendor);
+
+    }
 
     hideVendorModal();
 
@@ -1348,6 +1610,7 @@ async function addVendor() {
     alert("Firebase Error: " + error.message);
   }
 }
+
 
 async function updateTaskStatus(id, value) {
 
@@ -1385,61 +1648,71 @@ async function markTaskComplete(id) {
 
 }
 
-async function editTask(id) {
+
+function editTask(id) {
 
   const task =
     tasks.find(t => t.id === id);
 
   if(!task) return;
 
-  const title =
-    prompt("Task Title:", task.title);
-
-  if(title === null) return;
-
-  const category =
-    prompt("Category:", task.category || "");
-
-  const deadline =
-    prompt("Deadline:", task.deadline || "");
-
-  await tasksRef.child(id).update({
-
-    title: title,
-    category: category,
-    deadline: deadline
-
-  });
+  showTaskModal(task);
 
 }
 
-async function editVendor(id) {
+
+
+function editVendor(id) {
 
   const vendor =
     vendors.find(v => v.id === id);
 
   if(!vendor) return;
 
-  const name =
-    prompt("Vendor Name:", vendor.name);
-
-  if(name === null) return;
-
-  const website =
-    prompt("Website:", vendor.website || "");
-
-  const email =
-    prompt("Email:", vendor.email || "");
-
-  await vendorsRef.child(id).update({
-
-    name: name,
-    website: website,
-    email: email
-
-  });
+  showVendorModal(vendor);
 
 }
+
+
+
+
+function showMeetingModal(meeting = null) {
+
+  editingMeetingId = meeting ? meeting.id : null;
+
+  document.getElementById("meetingModalTitle").textContent =
+    meeting ? "Edit Meeting" : "Add Meeting";
+
+  document.getElementById("meetingModalVendor").value =
+    meeting?.vendor || "";
+
+  document.getElementById("meetingModalTitleInput").value =
+    meeting?.title || "";
+
+  document.getElementById("meetingModalDate").value =
+    meeting?.date || "";
+
+  document.getElementById("meetingModalTime").value =
+    meeting?.time || "";
+
+  document.getElementById("meetingModalEndTime").value =
+    meeting?.endTime || "";
+
+  document.getElementById("meetingModalDetails").value =
+    meeting?.details || "";
+
+  document.getElementById("meetingModal")
+    .classList.remove("hidden");
+}
+
+function hideMeetingModal() {
+
+  document.getElementById("meetingModal")
+    .classList.add("hidden");
+
+  editingMeetingId = null;
+}
+
 
 function renderMeetings() {
 
@@ -1485,7 +1758,7 @@ function renderMeetings() {
           </p>
 
           <p class="text-sm mt-2">
-            ${meeting.date} from ${meeting.time} to ${meeting.endTime || meeting.time}
+            ${formatReadableDate(meeting.date)} from ${formatStandardTime(meeting.time)} to ${formatStandardTime(meeting.endTime || meeting.time)}
           </p>
 
           ${meeting.details ? `
@@ -1506,6 +1779,12 @@ function renderMeetings() {
           </a>
 
           <button
+            onclick="editMeeting('${meeting.id}')"
+            class="bg-[#9caf88] text-white px-3 py-2 rounded-lg text-sm">
+            Edit
+          </button>
+
+          <button
             onclick="deleteMeeting('${meeting.id}')"
             class="text-red-500 font-bold">
             ✕
@@ -1523,27 +1802,28 @@ function renderMeetings() {
 
 }
 
-async function addMeeting() {
+
+async function saveMeeting() {
 
   const meeting = {
 
     vendor:
-      document.getElementById("meetingVendor").value,
+      document.getElementById("meetingModalVendor").value,
 
     title:
-      document.getElementById("meetingTitle").value,
+      document.getElementById("meetingModalTitleInput").value,
 
     date:
-      document.getElementById("meetingDate").value,
+      document.getElementById("meetingModalDate").value,
 
     time:
-      document.getElementById("meetingTime").value,
+      document.getElementById("meetingModalTime").value,
 
     endTime:
-      document.getElementById("meetingEndTime").value,
+      document.getElementById("meetingModalEndTime").value,
 
     details:
-      document.getElementById("meetingDetails").value
+      document.getElementById("meetingModalDetails").value
 
   };
 
@@ -1553,17 +1833,73 @@ async function addMeeting() {
     return;
   }
 
-  await meetingsRef.push(meeting);
+  if(editingMeetingId) {
 
-  document.getElementById("meetingVendor").value = "";
-  document.getElementById("meetingTitle").value = "";
-  document.getElementById("meetingDate").value = "";
-  document.getElementById("meetingTime").value = "";
-  document.getElementById("meetingEndTime").value = "";
-  document.getElementById("meetingDetails").value = "";
+    await meetingsRef.child(editingMeetingId).update(meeting);
+
+  } else {
+
+    await meetingsRef.push(meeting);
+
+  }
+
+  hideMeetingModal();
 
 }
 
+
+function editMeeting(id) {
+
+  const meeting =
+    meetings.find(m => m.id === id);
+
+  if(!meeting) {
+    console.log("Meeting not found:", id);
+    return;
+  }
+
+  showMeetingModal(meeting);
+}
+
+
+
+
+
+
+
+function formatReadableDate(dateString) {
+
+  if(!dateString) return "";
+
+  const date = new Date(dateString + "T00:00:00");
+
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+
+}
+
+function formatStandardTime(time) {
+
+  if(!time) return "";
+
+  const [hours, minutes] = time.split(":");
+
+  const date = new Date();
+
+  date.setHours(parseInt(hours, 10));
+  date.setMinutes(parseInt(minutes, 10));
+
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+
+}
 
 
 function renderTimeline() {
@@ -1595,8 +1931,30 @@ function renderTimeline() {
           </h3>
 
           <p class="text-sm mt-2">
-            ${event.time}
+            ${formatStandardTime(event.time)}
           </p>
+
+          <div class="flex items-center gap-2 mt-2">
+
+            <p class="text-sm text-gray-500">
+              ${event.type || "Ceremony"}
+            </p>
+
+            <select
+              onchange="updateTimelineType('${event.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              <option value="Ceremony" ${(event.type || "Ceremony") === "Ceremony" ? "selected" : ""}>
+                Ceremony
+              </option>
+
+              <option value="Reception" ${event.type === "Reception" ? "selected" : ""}>
+                Reception
+              </option>
+
+            </select>
+
+          </div>
 
           ${event.details ? `
             <p class="text-sm mt-2">
@@ -1606,11 +1964,21 @@ function renderTimeline() {
 
         </div>
 
-        <button
-          onclick="deleteTimelineEvent('${event.id}')"
-          class="text-red-500 font-bold">
-          ✕
-        </button>
+        <div class="flex gap-2">
+
+          <button
+            onclick="editTimelineEvent('${event.id}')"
+            class="bg-[#9caf88] text-white px-3 py-1 rounded text-xs">
+            Edit
+          </button>
+
+          <button
+            onclick="deleteTimelineEvent('${event.id}')"
+            class="text-red-500 font-bold">
+            ✕
+          </button>
+
+        </div>
 
       </div>
 
@@ -1622,18 +1990,55 @@ function renderTimeline() {
 
 }
 
-async function addTimelineEvent() {
+
+
+
+function showTimelineModal(event = null) {
+
+  editingTimelineId = event ? event.id : null;
+
+  document.getElementById("timelineModalTitle").textContent =
+    event ? "Edit Timeline Event" : "Add Timeline Event";
+
+  document.getElementById("timelineModalTime").value =
+    event?.time || "";
+
+  document.getElementById("timelineModalTitleInput").value =
+    event?.title || "";
+
+  document.getElementById("timelineModalType").value =
+    event?.type || "Ceremony";
+
+  document.getElementById("timelineModalDetails").value =
+    event?.details || "";
+
+  document.getElementById("timelineModal")
+    .classList.remove("hidden");
+}
+
+function hideTimelineModal() {
+
+  document.getElementById("timelineModal")
+    .classList.add("hidden");
+
+  editingTimelineId = null;
+}
+
+async function saveTimelineEvent() {
 
   const event = {
 
     time:
-      document.getElementById("timelineTime").value,
+      document.getElementById("timelineModalTime").value,
 
     title:
-      document.getElementById("timelineTitle").value,
+      document.getElementById("timelineModalTitleInput").value,
+
+    type:
+      document.getElementById("timelineModalType").value,
 
     details:
-      document.getElementById("timelineDetails").value
+      document.getElementById("timelineModalDetails").value
 
   };
 
@@ -1643,12 +2048,27 @@ async function addTimelineEvent() {
     return;
   }
 
-  await timelineRef.push(event);
+  if(editingTimelineId) {
 
-  document.getElementById("timelineTime").value = "";
-  document.getElementById("timelineTitle").value = "";
-  document.getElementById("timelineDetails").value = "";
+    await timelineRef.child(editingTimelineId).update(event);
 
+  } else {
+
+    await timelineRef.push(event);
+
+  }
+
+  hideTimelineModal();
+}
+
+function editTimelineEvent(id) {
+
+  const event =
+    timelineEvents.find(e => e.id === id);
+
+  if(!event) return;
+
+  showTimelineModal(event);
 }
 
 
@@ -1658,12 +2078,12 @@ async function printSchedule() {
 
     const ceremony =
       timelineEvents.filter(event =>
-        !event.title.toLowerCase().includes("reception")
+        (event.type || "Ceremony") === "Ceremony"
       );
 
     const reception =
       timelineEvents.filter(event =>
-        event.title.toLowerCase().includes("reception")
+        event.type === "Reception"
       );
 
     const {
@@ -1692,7 +2112,7 @@ async function printSchedule() {
           ...ceremony.flatMap(event => [
 
             new Paragraph({
-              text: `${event.time} — ${event.title}`
+              text: `${formatStandardTime(event.time)} — ${event.title}`
             }),
 
             new Paragraph({
@@ -1709,7 +2129,7 @@ async function printSchedule() {
           ...reception.flatMap(event => [
 
             new Paragraph({
-              text: `${event.time} — ${event.title}`
+              text: `${formatStandardTime(event.time)} — ${event.title}`
             }),
 
             new Paragraph({
@@ -1749,6 +2169,16 @@ async function printSchedule() {
   }
 
 }
+
+
+async function updateTimelineType(id, value) {
+
+  await timelineRef.child(id).update({
+    type: value
+  });
+
+}
+
 
 
 async function deleteTimelineEvent(id) {
@@ -1802,5 +2232,5 @@ async function deleteVendor(id) {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000b06c720f9e8a82469dcb7104%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc426766b014978163f165ec8d612cc9e58d33ebe218db35c2c8a762e1f7d8e7f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
 </html>
