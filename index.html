@@ -6,7 +6,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wedding HQ Planner - Realtime DB</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+function toggleEmailSent(householdIndex, checked) {
+
+  dinnerHouseholds[householdIndex].emailSent = checked;
+
+  dinnerHouseholdsRef.set(dinnerHouseholds);
+
+}
+
+function updateDinnerChoice(householdIndex, memberIndex, value) {
+
+  dinnerHouseholds[householdIndex]
+    .members[memberIndex]
+    .dinnerChoice = value;
+
+  dinnerHouseholdsRef.set(dinnerHouseholds);
+
+}
+
+
+function downloadDinnerCSV() {
+
+  try {
+
+    if(!dinnerHouseholds || !dinnerHouseholds.length) {
+
+      alert("No dinner data available.");
+
+      return;
+
+    }
+
+    const rows = [];
+
+    rows.push([
+      "Household",
+      "Email",
+      "Phone",
+      "Email Sent",
+      "Guest",
+      "Dinner Choice"
+    ]);
+
+    dinnerHouseholds.forEach(household => {
+
+      const householdName =
+        household.household || "";
+
+      const email =
+        household.email || "";
+
+      const emailSent =
+        household.emailSent ? "Yes" : "No";
+
+      (household.members || []).forEach(member => {
+
+        const guestName =
+          typeof member === "string"
+            ? member
+            : (member.name || "");
+
+        const dinnerChoice =
+          typeof member === "string"
+            ? ""
+            : (member.dinnerChoice || "");
+
+        rows.push([
+          householdName,
+          email,
+          household.phone ? formatPhoneNumber(household.phone) : "",
+          emailSent,
+          guestName,
+          dinnerChoice
+        ]);
+
+      });
+
+    });
+
+    const csvContent = rows.map(row => {
+
+      return row.map(field => {
+
+        const value =
+          String(field || "").replace(/"/g, '""');
+
+        return `"${value}"`;
+
+      }).join(",");
+
+    }).join("\n");
+
+    const blob =
+      new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;"
+      });
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      "wedding_dinner_tracking.csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("CSV download failed: " + error.message);
+
+  }
+
+}
+
+
+</script>
 
   <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -79,6 +206,7 @@
 
 <meta name="NetsparkQuiltingResult" total-length="41327" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <meta name="NetsparkQuiltingResult" total-length="44614" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
 
@@ -133,6 +261,11 @@
     <button onclick="showTab('timelineTab')"
       class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
       Timeline
+    </button>
+
+    <button onclick="showTab('whatsForDinnerTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      What's For Dinner
     </button>
 
   </div>
@@ -317,6 +450,85 @@
   </div>
 
 </div>
+
+
+<div id="whatsForDinnerTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6 mobile-stack">
+
+      <div>
+        <h2 class="text-3xl font-black">What's For Dinner</h2>
+        <p class="text-gray-500 mt-2">
+          Upload your RSVP export from The Knot and generate household dinner emails.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border border-[#d8a7b1]/30 mb-6">
+
+      <input
+        id="dinnerCsvUpload"
+        type="file"
+        accept=".csv"
+        class="w-full border rounded-2xl p-3 mb-4">
+
+      <div class="flex gap-3 mobile-stack">
+
+        <button
+          id="generateDinnerEmailsBtn"
+          class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl">
+          Generate Household Emails
+        </button>
+
+        <button
+          id="resetDinnerEmailsBtn"
+          class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-2xl">
+          Reset List
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Total Guests Attending
+        </p>
+        <h3 id="attendingGuestCount" class="text-4xl font-black text-[#9caf88] mt-2">
+          0
+        </h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Households
+        </p>
+        <h3 id="householdCount" class="text-4xl font-black text-[#d8a7b1] mt-2">
+          0
+        </h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30 flex items-center justify-center">
+        <button
+          onclick="downloadDinnerCSV()"
+          class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl">
+          Download Dinner CSV
+        </button>
+      </div>
+
+    </div>
+
+    <div id="dinnerResults" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
 
 <!-- TASK MODAL -->
 
@@ -695,6 +907,7 @@ const vendorsRef = db.ref("vendors");
 const purchasesRef = db.ref("purchases");
 const meetingsRef = db.ref("meetings");
 const timelineRef = db.ref("timeline");
+const dinnerHouseholdsRef = db.ref("dinnerHouseholds");
 
 let tasks = [];
 let vendors = [];
@@ -2294,5 +2507,3526 @@ async function deleteVendor(id) {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000c3f0720f9f90a2b466b9d243%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D578c3a6de40f7863adf665af76ef0f70baf3febb1ab331618b2b7d13c6ce3a9f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script></body>
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000c3f0720f9f90a2b466b9d243%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D578c3a6de40f7863adf665af76ef0f70baf3febb1ab331618b2b7d13c6ce3a9f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
+<script>
+
+
+let dinnerHouseholds = [];
+
+dinnerHouseholdsRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  if(data) {
+
+    dinnerHouseholds = normalizeDinnerData(data);
+
+    renderDinnerHouseholds();
+
+  } else {
+
+    dinnerHouseholds = [];
+
+    renderDinnerHouseholds();
+
+  }
+
+});
+
+function normalizeDinnerData(data) {
+
+  return data.map(household => {
+
+    return {
+
+      household: household.household || "",
+
+      email: household.email || "",
+
+      phone: household.phone ? formatPhoneNumber(household.phone) : "",
+
+      emailSent: !!household.emailSent,
+
+      members: (household.members || []).map(member => {
+
+        if(typeof member === "string") {
+
+          return {
+
+            name: member,
+
+            dinnerChoice: ""
+
+          };
+
+        }
+
+        return {
+
+          name: member.name || "",
+
+          dinnerChoice: member.dinnerChoice || ""
+
+        };
+
+      })
+
+    };
+
+  });
+
+}
+
+function initializeDinnerTab() {
+
+  const generateBtn =
+    document.getElementById("generateDinnerEmailsBtn");
+
+  if(generateBtn) {
+
+    generateBtn.addEventListener("click", processDinnerCSV);
+
+  }
+
+  const resetBtn =
+    document.getElementById("resetDinnerEmailsBtn");
+
+  if(resetBtn) {
+
+    resetBtn.addEventListener("click", () => {
+
+      const confirmed = confirm(
+        "Are you sure you want to reset the dinner list? This will permanently remove all households and dinner selections."
+      );
+
+      if(confirmed) {
+
+        resetDinnerList();
+
+      }
+
+    });
+
+  }
+
+}
+
+window.addEventListener("load", initializeDinnerTab);
+
+function processDinnerCSV() {
+
+  const upload =
+    document.getElementById("dinnerCsvUpload");
+
+  if(!upload || !upload.files.length) {
+
+    alert("Please upload your Knot RSVP CSV first.");
+
+    return;
+
+  }
+
+  const file = upload.files[0];
+
+  Papa.parse(file, {
+
+    header: true,
+
+    skipEmptyLines: true,
+
+    complete: function(results) {
+
+      const data = results.data;
+
+      const householdMap = {};
+
+      data.forEach(row => {
+
+        const firstName =
+          (row["First Name"] || "").trim();
+
+        const lastName =
+          (row["Last Name"] || "").trim();
+
+        const fullName =
+          `${firstName} ${lastName}`.trim();
+
+        const rsvp =
+          (row["Wedding Day - RSVP"] || "")
+            .toLowerCase()
+            .trim();
+
+        const party =
+          (row["Party"] || "").trim();
+
+        const email =
+          (row["Wedding Day - What is your preferred email for updates?"] || "").trim();
+
+        const phone =
+          (row["Wedding Day - What is your phone number?"] || "").trim();
+
+        const attending =
+          rsvp.includes("yes") ||
+          rsvp.includes("attending");
+
+        if(!attending || !fullName) return;
+
+        const householdName =
+          party || `${lastName} Household`;
+
+        if(!householdMap[householdName]) {
+
+          householdMap[householdName] = {
+
+            household: householdName,
+
+            email: email,
+
+            phone: phone,
+
+            emailSent: false,
+
+            members: []
+
+          };
+
+        }
+
+        householdMap[householdName].members.push({
+
+          name: fullName,
+
+          dinnerChoice: ""
+
+        });
+
+        if(email && !householdMap[householdName].email) {
+
+          householdMap[householdName].email = email;
+
+        }
+
+        if(phone && !householdMap[householdName].phone) {
+
+          householdMap[householdName].phone = phone;
+
+        }
+
+      });
+
+      dinnerHouseholds =
+        normalizeDinnerData(
+          Object.values(householdMap)
+        );
+
+      dinnerHouseholdsRef.set(dinnerHouseholds);
+
+      renderDinnerHouseholds();
+
+    }
+
+  });
+
+}
+
+function resetDinnerList() {
+
+  dinnerHouseholds = [];
+
+  dinnerHouseholdsRef.remove();
+
+  const upload =
+    document.getElementById("dinnerCsvUpload");
+
+  if(upload) {
+
+    upload.value = "";
+
+  }
+
+  renderDinnerHouseholds();
+
+}
+
+function toggleEmailSent(householdIndex, checked) {
+
+  dinnerHouseholds[householdIndex].emailSent = checked;
+
+  dinnerHouseholdsRef.set(dinnerHouseholds);
+
+}
+
+function updateDinnerChoice(householdIndex, memberIndex, value) {
+
+  dinnerHouseholds[householdIndex]
+    .members[memberIndex]
+    .dinnerChoice = value;
+
+  dinnerHouseholdsRef.set(dinnerHouseholds);
+
+}
+
+
+function formatPhoneNumber(phone) {
+
+  if(!phone) return "";
+
+  const digits =
+    phone.replace(/\D/g, "");
+
+  if(digits.length === 10) {
+
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+
+  }
+
+  if(digits.length === 11 && digits.startsWith("1")) {
+
+    return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+
+  }
+
+  return phone;
+
+}
+
+
+function renderDinnerHouseholds() {
+
+  const container =
+    document.getElementById("dinnerResults");
+
+  if(!container) return;
+
+  container.innerHTML = "";
+
+  const totalGuests =
+    dinnerHouseholds.reduce((sum, household) => {
+
+      return sum + household.members.length;
+
+    }, 0);
+
+  const guestCounter =
+    document.getElementById("attendingGuestCount");
+
+  if(guestCounter) {
+
+    guestCounter.textContent = totalGuests;
+
+  }
+
+  const householdCounter =
+    document.getElementById("householdCount");
+
+  if(householdCounter) {
+
+    householdCounter.textContent =
+      dinnerHouseholds.length;
+
+  }
+
+  if(!dinnerHouseholds.length) {
+
+    container.innerHTML = `
+      <div class="bg-white rounded-2xl p-6 text-gray-500">
+        Upload a CSV to generate households.
+      </div>
+    `;
+
+    return;
+
+  }
+
+  dinnerHouseholds.forEach((household, householdIndex) => {
+
+    const guestLines =
+      household.members
+        .map(member => `- ${member.name}`)
+        .join("\\n");
+
+    const householdFirstNames = household.members
+      .map(member => member.name)
+      .filter(name =>
+        !name.toLowerCase().includes("guest") &&
+        !name.toLowerCase().includes("+1") &&
+        !name.toLowerCase().includes("plus one")
+      )
+      .map(name => name.split(" ")[0]);
+
+    let greeting = "Hi";
+
+    if(householdFirstNames.length === 1) {
+
+      greeting += ` ${householdFirstNames[0]}`;
+
+    } else if(householdFirstNames.length === 2) {
+
+      greeting += ` ${householdFirstNames[0]} and ${householdFirstNames[1]}`;
+
+    } else if(householdFirstNames.length > 2) {
+
+      greeting += " " +
+        householdFirstNames.slice(0, -1).join(", ") +
+        ", and " +
+        householdFirstNames[householdFirstNames.length - 1];
+
+    }
+
+    const body = `${greeting},
+
+We are so excited to celebrate with you at our wedding!
+
+Could you please reply with a dinner choice for EACH guest in your household by May 30th?
+
+Dinner Menu
+
+Entree Options:
+• Red Pepper Sirloin (Beef)
+• Chipotle Peach Chicken (Chicken)
+• Orzo Stuffed Portobello Mushroom (Vegetarian)
+• Chicken Fingers and Mac and Cheese (Kids Meal)
+
+Sides:
+• Caramelized Onion & Boursin Mashed Potatoes
+• Maple Bacon Brussels Sprouts
+
+Please copy the list below and add each person's meal choice next to their name:
+
+${household.members.map(member => `${member.name}:`).join("\n")}
+
+Example:
+John Smith: Red Pepper Sirloin
+Jane Smith: Orzo Stuffed Portobello Mushroom
+
+Thank you so much!
+
+Kayla & Noah`;
+
+    const gmailUrl =
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(household.email)}&su=${encodeURIComponent("Wedding Dinner Selection")}&body=${encodeURIComponent(body)}`;
+
+    const memberHtml =
+      household.members.map((member, memberIndex) => {
+
+        return `
+
+          <div class="bg-[#f7f2ee] rounded-xl p-4 mb-3">
+
+            <div class="flex justify-between items-center mobile-stack gap-4">
+
+              <div class="font-semibold text-lg">
+                ${member.name}
+              </div>
+
+              <select
+                onchange="updateDinnerChoice(${householdIndex}, ${memberIndex}, this.value)"
+                class="border rounded-xl p-3 bg-white min-w-[220px]">
+
+                <option value="">Select Dinner Choice</option>
+
+                <option value="Chicken"
+                  ${member.dinnerChoice === "Chicken" ? "selected" : ""}>
+                  Chicken
+                </option>
+
+                <option value="Beef"
+                  ${member.dinnerChoice === "Beef" ? "selected" : ""}>
+                  Beef
+                </option>
+
+                <option value="Vegetarian"
+                  ${member.dinnerChoice === "Vegetarian" ? "selected" : ""}>
+                  Vegetarian
+                </option>
+
+                <option value="Kids Meal"
+                  ${member.dinnerChoice === "Kids Meal" ? "selected" : ""}>
+                  Kids Meal
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+        `;
+
+      }).join("");
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+
+    card.innerHTML = `
+
+      <div class="flex justify-between items-start gap-6 mobile-stack">
+
+        <div class="flex-1">
+
+          <div class="flex items-center gap-4 mb-3 mobile-stack">
+
+            <h3 class="text-2xl font-bold text-[#9caf88] flex items-center gap-2">
+              ${household.household}
+
+              ${!household.email ? `
+                <span
+                  title="Missing email address"
+                  class="text-red-500 text-3xl leading-none">
+                  *
+                </span>
+              ` : ""}
+            </h3>
+
+            <label class="flex items-center gap-2 text-sm">
+
+              <input
+                type="checkbox"
+                ${household.emailSent ? "checked" : ""}
+                onchange="toggleEmailSent(${householdIndex}, this.checked)">
+
+              Email Sent
+
+            </label>
+
+          </div>
+
+          <div class="mb-4 space-y-1">
+
+            <p class="text-sm text-gray-500">
+              📧 ${household.email || "No email found"}
+            </p>
+
+            <p class="text-sm text-gray-500">
+              📱 ${household.phone ? formatPhoneNumber(household.phone) : "No phone number found"}
+            </p>
+
+          </div>
+
+          ${memberHtml}
+
+        </div>
+
+        <a
+          href="${gmailUrl}"
+          target="_blank"
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl text-center whitespace-nowrap">
+          Draft Gmail Email
+        </a>
+
+      </div>
+
+    `;
+
+    container.appendChild(card);
+
+  });
+
+}
+
+
+
+function downloadDinnerCSV() {
+
+  try {
+
+    if(!dinnerHouseholds || !dinnerHouseholds.length) {
+
+      alert("No dinner data available.");
+
+      return;
+
+    }
+
+    const rows = [];
+
+    rows.push([
+      "Household",
+      "Email",
+      "Phone",
+      "Email Sent",
+      "Guest",
+      "Dinner Choice"
+    ]);
+
+    dinnerHouseholds.forEach(household => {
+
+      const householdName =
+        household.household || "";
+
+      const email =
+        household.email || "";
+
+      const emailSent =
+        household.emailSent ? "Yes" : "No";
+
+      (household.members || []).forEach(member => {
+
+        const guestName =
+          typeof member === "string"
+            ? member
+            : (member.name || "");
+
+        const dinnerChoice =
+          typeof member === "string"
+            ? ""
+            : (member.dinnerChoice || "");
+
+        rows.push([
+          householdName,
+          email,
+          household.phone ? formatPhoneNumber(household.phone) : "",
+          emailSent,
+          guestName,
+          dinnerChoice
+        ]);
+
+      });
+
+    });
+
+    const csvContent = rows.map(row => {
+
+      return row.map(field => {
+
+        const value =
+          String(field || "").replace(/"/g, '""');
+
+        return `"${value}"`;
+
+      }).join(",");
+
+    }).join("\n");
+
+    const blob =
+      new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;"
+      });
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      "wedding_dinner_tracking.csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("CSV download failed: " + error.message);
+
+  }
+
+}
+
+
+</script>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  
+  <style>
+    body {
+      background: #f7f2ee;
+      font-family: Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .glass {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 768px) {
+
+      .mobile-stack {
+        flex-direction: column !important;
+      }
+
+      .mobile-full {
+        width: 100% !important;
+      }
+
+      h1 {
+        font-size: 2.5rem !important;
+        line-height: 1.1;
+      }
+
+      h2 {
+        font-size: 1.75rem !important;
+      }
+
+      .mobile-scroll {
+        overflow-x: auto;
+      }
+
+      button {
+        min-height: 44px;
+      }
+
+      input,
+      textarea,
+      select {
+        font-size: 16px !important;
+      }
+
+      .mobile-grid-1 {
+        grid-template-columns: 1fr !important;
+      }
+
+    }
+  </style>
+
+
+
+<meta name="NetsparkQuiltingResult" total-length="29540" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="31015" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="35475" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="37592" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="40099" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="41327" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<meta name="NetsparkQuiltingResult" total-length="44614" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="47311" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="51253" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="57917" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+
+<meta name="NetsparkQuiltingResult" total-length="60987" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w2577,w11756,w6565,w6563,w3034,w340,w3789,w3829,w3830,w3081" />
+</head>
+
+<body class="min-h-screen text-gray-800">
+
+<div class="max-w-7xl mx-auto p-6">
+
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8 mobile-stack">
+
+    <div>
+      <h1 class="text-5xl font-black text-[#9caf88]">Wedding HQ</h1>
+      <p class="text-gray-500 mt-2">Firebase Realtime Database Wedding Planner</p>
+    </div>
+
+    <div class="glass rounded-3xl shadow-xl p-6 text-center">
+      <p class="uppercase text-xs tracking-widest text-gray-500">Countdown</p>
+      <h2 id="countdown" class="text-5xl font-black text-rose-500 mt-2"></h2>
+      <p class="text-gray-500">until July 9, 2026</p>
+    </div>
+
+  </div>
+
+
+  <!-- TAB NAVIGATION -->
+
+  <div class="flex flex-wrap gap-3 mb-8 justify-center">
+
+    <button onclick="showTab('tasksTab')"
+      class="tab-btn bg-[#9caf88] text-white px-5 py-3 rounded-2xl">
+      Tasks
+    </button>
+
+    <button onclick="showTab('vendorsTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Vendors
+    </button>
+
+    <button onclick="showTab('meetingsTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Meetings
+    </button>
+
+    <button onclick="showTab('timelineTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      Timeline
+    </button>
+
+    <button onclick="showTab('whatsForDinnerTab')"
+      class="tab-btn bg-[#d8a7b1] text-white px-5 py-3 rounded-2xl">
+      What's For Dinner
+    </button>
+
+  </div>
+
+
+  <div id="tasksTab" class="tab-content">
+
+<!-- CRITICAL TASKS -->
+
+  <div class="glass rounded-3xl p-6 shadow-lg mb-8 border-2 border-red-300">
+
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-3xl font-black text-red-600">
+        🚨 Critical Tasks
+      </h2>
+
+      <button onclick="showCompletedModal()"
+        class="bg-gray-800 text-white px-4 py-2 rounded-xl text-sm">
+        Completed Tasks
+      </button>
+    </div>
+
+    <div id="criticalTaskList" class="space-y-3"></div>
+
+  </div>
+
+<div class="grid lg:grid-cols-3 gap-6 mb-8">
+
+    <div class="glass rounded-3xl p-6 shadow-lg">
+      <h3 class="text-2xl font-black mb-4">Planning Progress</h3>
+
+      <div class="w-full bg-gray-200 rounded-full h-5">
+        <div id="progressBar" class="bg-[#d8a7b1] h-5 rounded-full"></div>
+      </div>
+
+      <p id="progressText" class="mt-4 text-gray-600 font-semibold"></p>
+    </div>
+
+    <div class="glass rounded-3xl p-6 shadow-lg">
+      <h3 class="text-2xl font-black mb-4">Quick Stats</h3>
+
+      <div class="space-y-3">
+        <p>Total Tasks: <span id="taskCount" class="font-bold"></span></p>
+        <p>Completed Tasks: <span id="completedCount" class="font-bold"></span></p>
+        <p>Total Vendors: <span id="vendorCount" class="font-bold"></span></p>
+      </div>
+    </div>
+
+    <div class="glass rounded-3xl p-6 shadow-lg">
+      <h3 class="text-2xl font-black mb-4">Upcoming Deadlines</h3>
+
+      <ul id="upcomingList" class="space-y-2"></ul>
+    </div>
+
+  </div>
+
+  
+
+
+  <div class="grid lg:grid-cols-2 gap-8 mobile-grid-1">
+
+    <!-- TASKS -->
+
+    <div class="glass rounded-3xl p-6 shadow-lg">
+
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-black">Wedding Tasks</h2>
+
+        <button onclick="showTaskModal()"
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+          + Add Task
+        </button>
+      </div>
+
+      <div id="taskList" class="space-y-4 max-h-[700px] overflow-y-auto"></div>
+
+    </div>
+
+    <!-- PURCHASE ITEMS -->
+
+    <div class="glass rounded-3xl p-6 shadow-lg mt-8">
+
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-black">Items To Purchase</h2>
+      </div>
+
+      <div class="flex gap-4 mb-6 mobile-stack">
+
+        <input id="purchaseItemInput"
+          class="flex-1 border rounded-2xl p-3"
+          placeholder="Example: Bible, Reserved Pew Hangs">
+
+        <button onclick="showPurchaseModal()"
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+          Add Item
+        </button>
+
+      </div>
+
+      <textarea id="purchaseNotes"
+        class="w-full border rounded-2xl p-3 mb-4"
+        rows="3"
+        placeholder="Helpful Notes"></textarea>
+
+      <textarea id="purchaseLinks"
+        class="w-full border rounded-2xl p-3 mb-6"
+        rows="4"
+        placeholder="Paste product links here (one per line)"></textarea>
+
+      <div id="purchaseList" class="space-y-3"></div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div id="vendorsTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Vendor Tracker</h2>
+
+      <button onclick="showVendorModal()"
+        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+        + Add Vendor
+      </button>
+    </div>
+
+    <div id="vendorList" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
+<div id="meetingsTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Upcoming Meetings</h2>
+
+      <button onclick="showMeetingModal()"
+        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+        + Add Meeting
+      </button>
+    </div>
+
+    
+
+    <div id="meetingList" class="space-y-4 mt-6"></div>
+
+  </div>
+
+</div>
+
+<div id="timelineTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-black">Wedding Day Timeline</h2>
+
+      <button onclick="showTimelineModal()"
+        class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl mobile-full">
+        + Add Timeline Event
+      </button>
+    </div>
+
+    
+
+      <button onclick="printSchedule()"
+        class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl mobile-full">
+        Print Schedule
+      </button>
+
+    </div>
+
+    <div id="timelineList" class="space-y-4 mt-6"></div>
+
+  </div>
+
+</div>
+
+
+<div id="whatsForDinnerTab" class="tab-content hidden">
+
+  <div class="glass rounded-3xl p-6 shadow-lg">
+
+    <div class="flex justify-between items-center mb-6 mobile-stack">
+
+      <div>
+        <h2 class="text-3xl font-black">What's For Dinner</h2>
+        <p class="text-gray-500 mt-2">
+          Upload your RSVP export from The Knot and generate household dinner emails.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border border-[#d8a7b1]/30 mb-6">
+
+      <input
+        id="dinnerCsvUpload"
+        type="file"
+        accept=".csv"
+        class="w-full border rounded-2xl p-3 mb-4">
+
+      <div class="flex gap-3 mobile-stack">
+
+        <button
+          id="generateDinnerEmailsBtn"
+          class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl">
+          Generate Household Emails
+        </button>
+
+        <button
+          id="resetDinnerEmailsBtn"
+          class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-2xl">
+          Reset List
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Total Guests Attending
+        </p>
+        <h3 id="attendingGuestCount" class="text-4xl font-black text-[#9caf88] mt-2">
+          0
+        </h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Households
+        </p>
+        <h3 id="householdCount" class="text-4xl font-black text-[#d8a7b1] mt-2">
+          0
+        </h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30 flex items-center justify-center">
+        <button
+          onclick="downloadDinnerCSV()"
+          class="bg-[#9caf88] hover:bg-[#879a75] text-white px-5 py-3 rounded-2xl">
+          Download Dinner CSV
+        </button>
+      </div>
+
+    </div>
+
+    <div id="dinnerResults" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
+
+<!-- TASK MODAL -->
+
+
+<div id="taskModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="taskModalTitle" class="text-3xl font-black mb-6">Add Wedding Task</h2>
+
+    <div class="space-y-4">
+
+      <input id="taskTitle"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Task Title">
+
+      <input id="taskCategory"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Category">
+
+
+      <input id="taskDeadline"
+        type="date"
+        class="w-full border rounded-2xl p-3">
+
+      <label class="flex items-center gap-2 text-sm">
+        <input id="taskNoDeadline" type="checkbox">
+        No Deadline (N/A)
+      </label>
+
+      <select id="taskPriority"
+        class="w-full border rounded-2xl p-3">
+
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+        <option>Critical</option>
+
+      </select>
+
+      <select id="taskStatus"
+        class="w-full border rounded-2xl p-3">
+
+        <option>Not Started</option>
+        <option>Researching</option>
+        <option>Waiting</option>
+        <option>In Progress</option>
+        <option>Almost Done</option>
+        <option>Completed</option>
+
+      </select>
+
+
+      <select id="taskVendor"
+        class="w-full border rounded-2xl p-3">
+        <option value="">Associated Vendor</option>
+      </select>
+
+      <label class="text-sm font-semibold">Attach File</label>
+
+      <input id="taskFile"
+        type="file"
+        class="w-full border rounded-2xl p-3">
+
+      <div class="flex gap-4">
+
+        <button onclick="saveTask()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Task
+        </button>
+
+        <button onclick="hideTaskModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- VENDOR MODAL -->
+
+<div id="vendorModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="vendorModalTitle" class="text-3xl font-black mb-6">Add Vendor</h2>
+
+    <div class="space-y-4">
+
+      <input id="vendorName"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Vendor Name">
+
+      <input id="vendorCategory"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Category">
+
+      <input id="vendorContact"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Contact Person">
+
+      <input id="vendorEmail"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Email">
+
+      <input id="vendorPhone"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Phone">
+
+      <input id="vendorDeposit"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Deposit Amount">
+      <input id="vendorWebsite"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Website">
+
+      <div class="flex gap-4">
+
+        <button onclick="saveVendor()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Vendor
+        </button>
+
+        <button onclick="hideVendorModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- PURCHASE MODAL -->
+
+<div id="purchaseModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="purchaseModalTitle" class="text-3xl font-black mb-6">
+      Add Purchase Item
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="purchaseModalName"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Item Name">
+
+      <textarea id="purchaseModalNotes"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Helpful Notes"></textarea>
+
+      <div>
+        <label class="block text-sm font-semibold mb-2">
+          Purchase Options
+        </label>
+
+        <div id="purchaseOptionsContainer" class="space-y-2"></div>
+
+        <button
+          type="button"
+          onclick="addPurchaseOptionField()"
+          class="mt-3 bg-[#9caf88] text-white px-4 py-2 rounded-xl text-sm">
+          + Add Option
+        </button>
+      </div>
+
+      <div class="flex gap-4">
+
+        <button onclick="savePurchaseItem()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Item
+        </button>
+
+        <button onclick="hidePurchaseModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+<!-- MEETING MODAL -->
+
+<div id="meetingModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="meetingModalTitle" class="text-3xl font-black mb-6">
+      Add Meeting
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="meetingModalVendor"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Vendor Name">
+
+      <input id="meetingModalTitleInput"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Meeting Title">
+
+      <input id="meetingModalDate"
+        type="date"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="meetingModalTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="meetingModalEndTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <textarea id="meetingModalDetails"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Meeting Details"></textarea>
+
+      <div class="flex gap-4">
+
+        <button onclick="saveMeeting()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Meeting
+        </button>
+
+        <button onclick="hideMeetingModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- TIMELINE MODAL -->
+
+<div id="timelineModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+
+    <h2 id="timelineModalTitle" class="text-3xl font-black mb-6">
+      Add Timeline Event
+    </h2>
+
+    <div class="space-y-4">
+
+      <input id="timelineModalTime"
+        type="time"
+        class="w-full border rounded-2xl p-3">
+
+      <input id="timelineModalTitleInput"
+        class="w-full border rounded-2xl p-3"
+        placeholder="Event Title">
+
+      <select id="timelineModalType"
+        class="w-full border rounded-2xl p-3">
+        <option value="Ceremony">Ceremony</option>
+        <option value="Reception">Reception</option>
+      </select>
+
+      <textarea id="timelineModalDetails"
+        class="w-full border rounded-2xl p-3"
+        rows="3"
+        placeholder="Timeline Details"></textarea>
+
+      <div class="flex gap-4">
+
+        <button onclick="saveTimelineEvent()"
+          class="bg-[#d8a7b1] text-white flex-1 py-3 rounded-2xl">
+          Save Event
+        </button>
+
+        <button onclick="hideTimelineModal()"
+          class="bg-gray-200 flex-1 py-3 rounded-2xl">
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+/*
+REALTIME DATABASE RULES:
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+*/
+
+
+function showTab(tabId) {
+
+  document.querySelectorAll(".tab-content")
+    .forEach(tab => tab.classList.add("hidden"));
+
+  document.getElementById(tabId)
+    .classList.remove("hidden");
+
+  document.querySelectorAll(".tab-btn")
+    .forEach(btn => {
+      btn.classList.remove("bg-[#9caf88]");
+      btn.classList.add("bg-[#d8a7b1]");
+    });
+
+  event.target.classList.remove("bg-[#d8a7b1]");
+  event.target.classList.add("bg-[#9caf88]");
+
+}
+
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBMcWHdQxCDe6lcq184A0Be7hhTrTqHba8",
+
+  authDomain: "wedding-planning-e89c7.firebaseapp.com",
+
+  databaseURL: "https://wedding-planning-e89c7-default-rtdb.firebaseio.com",
+
+  projectId: "wedding-planning-e89c7",
+
+  storageBucket: "wedding-planning-e89c7.appspot.com",
+
+  messagingSenderId: "101109655856",
+
+  appId: "1:101109655856:web:dc3934ec574f65ddd840f5"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+const tasksRef = db.ref("tasks");
+const vendorsRef = db.ref("vendors");
+const purchasesRef = db.ref("purchases");
+const meetingsRef = db.ref("meetings");
+const timelineRef = db.ref("timeline");
+const dinnerHouseholdsRef = db.ref("dinnerHouseholds");
+
+let tasks = [];
+let vendors = [];
+let purchases = [];
+let meetings = [];
+let timelineEvents = [];
+
+let editingTaskId = null;
+let editingVendorId = null;
+let editingPurchaseId = null;
+let editingMeetingId = null;
+let editingTimelineId = null;
+
+function updateCountdown() {
+
+  const weddingDate = new Date("2026-07-09");
+  const today = new Date();
+
+  const diff = weddingDate - today;
+
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  document.getElementById("countdown").textContent = days + " Days";
+}
+
+updateCountdown();
+
+
+function clearTaskForm() {
+
+  document.getElementById("taskTitle").value = "";
+  document.getElementById("taskCategory").value = "";
+  document.getElementById("taskDeadline").value = "";
+  document.getElementById("taskNoDeadline").checked = false;
+  document.getElementById("taskPriority").value = "Low";
+  document.getElementById("taskStatus").value = "Not Started";
+  document.getElementById("taskVendor").value = "";
+  document.getElementById("taskFile").value = "";
+
+}
+
+function showTaskModal(task = null) {
+
+  editingTaskId = task ? task.id : null;
+
+  document.getElementById("taskModalTitle").textContent =
+    task ? "Edit Wedding Task" : "Add Wedding Task";
+
+  if(task) {
+
+    document.getElementById("taskTitle").value = task.title || "";
+    document.getElementById("taskCategory").value = task.category || "";
+
+    if(task.deadline === "N/A") {
+      document.getElementById("taskNoDeadline").checked = true;
+      document.getElementById("taskDeadline").value = "";
+    } else {
+      document.getElementById("taskNoDeadline").checked = false;
+      document.getElementById("taskDeadline").value = task.deadline || "";
+    }
+
+    document.getElementById("taskPriority").value = task.priority || "Low";
+    document.getElementById("taskStatus").value = task.status || "Not Started";
+    document.getElementById("taskVendor").value = task.vendor || "";
+
+  } else {
+
+    clearTaskForm();
+
+  }
+
+  document.getElementById("taskModal").classList.remove("hidden");
+}
+
+function hideTaskModal() {
+
+  document.getElementById("taskModal").classList.add("hidden");
+
+  editingTaskId = null;
+
+  clearTaskForm();
+}
+
+function clearVendorForm() {
+
+  document.getElementById("vendorName").value = "";
+  document.getElementById("vendorCategory").value = "";
+  document.getElementById("vendorContact").value = "";
+  document.getElementById("vendorEmail").value = "";
+  document.getElementById("vendorPhone").value = "";
+  document.getElementById("vendorDeposit").value = "";
+  document.getElementById("vendorWebsite").value = "";
+
+}
+
+function showVendorModal(vendor = null) {
+
+  editingVendorId = vendor ? vendor.id : null;
+
+  document.getElementById("vendorModalTitle").textContent =
+    vendor ? "Edit Vendor" : "Add Vendor";
+
+  if(vendor) {
+
+    document.getElementById("vendorName").value = vendor.name || "";
+    document.getElementById("vendorCategory").value = vendor.category || "";
+    document.getElementById("vendorContact").value = vendor.contact || "";
+    document.getElementById("vendorEmail").value = vendor.email || "";
+    document.getElementById("vendorPhone").value = vendor.phone || "";
+    document.getElementById("vendorDeposit").value = vendor.deposit || "";
+    document.getElementById("vendorWebsite").value = vendor.website || "";
+
+  } else {
+
+    clearVendorForm();
+
+  }
+
+  document.getElementById("vendorModal").classList.remove("hidden");
+}
+
+function hideVendorModal() {
+
+  document.getElementById("vendorModal").classList.add("hidden");
+
+  editingVendorId = null;
+
+  clearVendorForm();
+}
+
+
+function showCompletedModal() {
+
+  document
+    .getElementById("completedModal")
+    .classList
+    .remove("hidden");
+
+}
+
+function hideCompletedModal() {
+
+  document
+    .getElementById("completedModal")
+    .classList
+    .add("hidden");
+
+}
+
+tasksRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  tasks = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      tasks.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderTasks();
+
+});
+
+vendorsRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  vendors = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      vendors.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderVendors();
+  populateVendorDropdown();
+
+});
+
+meetingsRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  meetings = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      meetings.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderMeetings();
+
+});
+
+
+timelineRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  timelineEvents = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      timelineEvents.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderTimeline();
+
+});
+
+
+purchasesRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  purchases = [];
+
+  if(data) {
+
+    Object.keys(data).forEach((key) => {
+
+      purchases.push({
+        id: key,
+        ...data[key]
+      });
+
+    });
+
+  }
+
+  renderPurchases();
+
+});
+
+function getStatusColor(status) {
+
+  switch(status) {
+
+    case "Completed":
+      return "border-green-400 bg-green-50";
+
+    case "In Progress":
+      return "border-blue-400 bg-blue-50";
+
+    case "Waiting":
+      return "border-yellow-400 bg-yellow-50";
+
+    case "Researching":
+      return "border-purple-400 bg-purple-50";
+
+    case "Critical":
+      return "border-red-400 bg-red-50";
+
+    default:
+      return "border-gray-200 bg-white";
+  }
+
+}
+
+function renderTasks() {
+
+  const container =
+    document.getElementById("taskList");
+
+  const completedContainer =
+    document.getElementById("completedTaskList");
+
+  const criticalContainer =
+    document.getElementById("criticalTaskList");
+
+  container.innerHTML = "";
+  completedContainer.innerHTML = "";
+  criticalContainer.innerHTML = "";
+
+  tasks.sort((a,b) => {
+
+    if(a.deadline === "N/A") return 1;
+    if(b.deadline === "N/A") return -1;
+
+    return new Date(a.deadline) - new Date(b.deadline);
+
+  });
+
+  tasks.forEach((task) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "rounded-2xl p-5 shadow border border-[#d8a7b1]/30 bg-white";
+
+    div.innerHTML = `
+
+      <div class="flex justify-between items-start gap-3 mobile-stack">
+
+        <div class="flex-1">
+
+          <h3 class="text-xl font-bold">${task.title}</h3>
+
+          <p class="text-gray-500">${task.category}</p>
+
+          <p class="text-sm mt-2">
+            Deadline: ${task.deadline === "N/A" ? "N/A" : formatReadableDate(task.deadline)}
+          </p>
+
+          <p class="text-sm">
+            Priority: ${task.priority}
+          </p>
+
+          <p class="text-sm">
+            Status: ${task.status}
+          </p>
+
+          <p class="text-sm">
+            Vendor: ${task.vendor || "None"}
+          </p>
+
+          ${task.fileName ? `
+            <a
+              href="${task.fileData || '#'}"
+              target="_blank" rel="noopener noreferrer"
+              class="block text-blue-600 underline mt-2">
+              📎 View File: ${task.fileName}
+            </a>
+          ` : ""}
+
+          <div class="flex flex-wrap gap-2 mt-4">
+
+            <select
+              onchange="updateTaskPriority('${task.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              ${['Low','Medium','High','Critical']
+                .map(p => `
+                  <option
+                    value="${p}"
+                    ${task.priority === p ? 'selected' : ''}>
+                    ${p}
+                  </option>
+                `).join('')}
+
+            </select>
+
+            <select
+              onchange="updateTaskStatus('${task.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              ${['Not Started','Researching','Waiting','In Progress','Almost Done','Completed','Critical']
+                .map(s => `
+                  <option
+                    value="${s}"
+                    ${task.status === s ? 'selected' : ''}>
+                    ${s}
+                  </option>
+                `).join('')}
+
+            </select>
+
+
+
+            <button
+              onclick="markTaskComplete('${task.id}')"
+              class="bg-green-500 text-white px-2 py-1 rounded text-xs">
+              Complete
+            </button>
+
+            <button
+              onclick="editTask('${task.id}')"
+              class="bg-[#9caf88] text-white px-2 py-1 rounded text-xs">
+              Edit
+            </button>
+
+          </div>
+
+        </div>
+
+        <button
+          onclick="deleteTask('${task.id}')"
+          class="text-red-500 font-bold ml-4">
+          ✕
+        </button>
+
+      </div>
+
+
+
+    `;
+
+    if(task.status === "Completed" || task.completed === true) {
+
+      completedContainer.appendChild(div);
+
+    } else {
+
+      container.appendChild(div);
+
+    }
+
+    if((task.priority === "Critical" ||
+       task.status === "Critical") &&
+       task.status !== "Completed" &&
+       task.completed !== true) {
+
+      const criticalCard = div.cloneNode(true);
+
+      criticalContainer.appendChild(criticalCard);
+
+    }
+
+  });
+
+  updateStats();
+
+  renderUpcoming();
+}
+function renderVendors() {
+
+  const container = document.getElementById("vendorList");
+
+  container.innerHTML = "";
+
+  vendors.forEach((vendor) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "rounded-2xl p-5 shadow border border-[#d8a7b1]/30 bg-white";
+
+    div.innerHTML = `
+
+      <div class="flex justify-between items-start gap-3 mobile-stack">
+
+        <div>
+
+          <h3 class="text-xl font-bold text-[#9caf88]">
+            ${vendor.name}
+          </h3>
+
+          <p class="text-gray-500">${vendor.category}</p>
+
+          <p class="text-sm mt-2">${vendor.contact}</p>
+
+          <p class="text-sm">${vendor.email}</p>
+
+          <p class="text-sm">${vendor.phone}</p>
+
+          ${vendor.website ? `
+            <a
+              href="${vendor.website}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[#9caf88] underline text-sm">
+              Visit Website
+            </a>
+          ` : ""}
+
+        </div>
+
+        <div class="flex gap-2">
+
+          <button
+            onclick="editVendor('${vendor.id}')"
+            class="bg-[#9caf88] text-white px-2 py-1 rounded text-xs">
+            Edit
+          </button>
+
+          <button
+            onclick="deleteVendor('${vendor.id}')"
+            class="text-red-500 font-bold">
+            ✕
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+  document.getElementById("vendorCount").textContent =
+    vendors.length;
+}
+
+function populateVendorDropdown() {
+
+  const select =
+    document.getElementById("taskVendor");
+
+  select.innerHTML =
+    '<option value="">Associated Vendor</option>';
+
+  vendors.forEach((vendor) => {
+
+    select.innerHTML += `
+      <option value="${vendor.name}">
+        ${vendor.name}
+      </option>
+    `;
+
+  });
+
+}
+
+function updateStats() {
+
+  const completed =
+    tasks.filter(t => t.completed).length;
+
+  const percent = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+
+  document.getElementById("taskCount").textContent =
+    tasks.length;
+
+  document.getElementById("completedCount").textContent =
+    completed;
+
+  document.getElementById("progressBar").style.width =
+    percent + "%";
+
+  document.getElementById("progressText").textContent =
+    percent + "% Complete";
+}
+
+function renderUpcoming() {
+
+  const upcoming = [...tasks]
+    .filter(t => t.status !== "Completed" && !t.completed)
+    .slice(0,5);
+
+  document.getElementById("upcomingList").innerHTML =
+    upcoming.map(task => `
+
+      <li class="bg-white rounded-xl p-3 shadow-sm">
+
+        <strong>${task.title}</strong><br>
+
+        <span class="text-gray-500 text-sm">
+          ${task.deadline === "N/A" ? "N/A" : formatReadableDate(task.deadline)}
+        </span>
+
+      </li>
+
+    `).join("");
+}
+
+function renderPurchases() {
+
+  const container =
+    document.getElementById("purchaseList");
+
+  container.innerHTML = "";
+
+  purchases.forEach((item) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 flex justify-between items-center";
+
+    div.innerHTML = `
+
+      <div class="flex items-center gap-3">
+
+        <input
+          type="checkbox"
+          ${item.purchased ? "checked" : ""}
+          onchange="togglePurchase('${item.id}', this.checked)"
+          class="w-5 h-5">
+
+        <span class="${item.purchased ? 'line-through text-gray-400' : ''}">
+          ${item.name}
+        </span>
+
+        <button
+          onclick="togglePurchaseDetails('${item.id}')"
+          class="text-blue-600 underline text-sm">
+          View Options
+        </button>
+
+        ${item.notes ? `
+          <p class="text-xs text-gray-500 italic">
+            ${item.notes}
+          </p>
+        ` : ""}
+
+        <div
+          id="purchase-details-${item.id}"
+          class="hidden mt-3 space-y-2">
+
+          ${item.links ? item.links.map((link, index) => `
+            <a
+              href="${link}"
+              target="_blank" rel="noopener noreferrer"
+              class="inline-block bg-[#d8a7b1] text-white px-3 py-2 rounded-lg text-sm mr-2">
+              Option ${index + 1}
+            </a>
+          `).join('') : '<p class="text-sm text-gray-400">No links added</p>'}
+
+        </div>
+
+      </div>
+
+      <div class="flex gap-2 mt-2">
+
+        <button
+          onclick="editPurchase('${item.id}')"
+          class="bg-[#9caf88] text-white px-3 py-1 rounded text-xs">
+          Edit
+        </button>
+
+        <button
+          onclick="deletePurchase('${item.id}')"
+          class="text-red-500 font-bold">
+          ✕
+        </button>
+
+      </div>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+function togglePurchaseDetails(id) {
+
+  const el =
+    document.getElementById(`purchase-details-${id}`);
+
+  el.classList.toggle("hidden");
+
+}
+
+
+function showPurchaseModal(item = null) {
+
+  editingPurchaseId = item ? item.id : null;
+
+  document.getElementById("purchaseModalTitle").textContent =
+    item ? "Edit Purchase Item" : "Add Purchase Item";
+
+  document.getElementById("purchaseModalName").value =
+    item?.name || "";
+
+  document.getElementById("purchaseModalNotes").value =
+    item?.notes || "";
+
+  const optionsContainer =
+    document.getElementById("purchaseOptionsContainer");
+
+  optionsContainer.innerHTML = "";
+
+  if(item?.links?.length) {
+
+    item.links.forEach(link => {
+      addPurchaseOptionField(link);
+    });
+
+  } else {
+
+    addPurchaseOptionField();
+
+  }
+
+  document.getElementById("purchaseModal")
+    .classList.remove("hidden");
+}
+
+function hidePurchaseModal() {
+
+  document.getElementById("purchaseModal")
+    .classList.add("hidden");
+
+  editingPurchaseId = null;
+
+  document.getElementById("purchaseModalName").value = "";
+  document.getElementById("purchaseModalNotes").value = "";
+  document.getElementById("purchaseOptionsContainer").innerHTML = "";
+}
+
+function editPurchase(id) {
+
+  const item =
+    purchases.find(p => p.id === id);
+
+  if(!item) return;
+
+  showPurchaseModal(item);
+}
+
+
+function addPurchaseOptionField(value = "") {
+
+  const container =
+    document.getElementById("purchaseOptionsContainer");
+
+  const wrapper = document.createElement("div");
+
+  wrapper.className = "flex gap-2";
+
+  wrapper.innerHTML = `
+    <input
+      type="text"
+      class="purchase-option-input flex-1 border rounded-2xl p-3"
+      placeholder="Paste product link"
+      value="${value}">
+
+    <button
+      type="button"
+      onclick="this.parentElement.remove()"
+      class="bg-red-500 text-white px-3 rounded-xl">
+      ✕
+    </button>
+  `;
+
+  container.appendChild(wrapper);
+
+}
+
+async function savePurchaseItem() {
+
+  const name =
+    editingPurchaseId
+      ? document.getElementById("purchaseModalName").value.trim()
+      : document.getElementById("purchaseItemInput").value.trim();
+
+  if(!name) {
+
+    alert("Please enter an item name.");
+    return;
+  }
+
+  const notes =
+    editingPurchaseId
+      ? document.getElementById("purchaseModalNotes").value
+      : document.getElementById("purchaseNotes").value;
+
+  let links = [];
+
+  if(editingPurchaseId) {
+
+    links = Array.from(
+      document.querySelectorAll(".purchase-option-input")
+    )
+    .map(input => input.value.trim())
+    .filter(link => link);
+
+  } else {
+
+    links =
+      document.getElementById("purchaseLinks").value
+        .split("\\n")
+        .map(link => link.trim())
+        .filter(link => link);
+
+  }
+
+  const purchaseData = {
+    name,
+    notes,
+    links
+  };
+
+  if(editingPurchaseId) {
+
+    await purchasesRef
+      .child(editingPurchaseId)
+      .update(purchaseData);
+
+  } else {
+
+    purchaseData.purchased = false;
+
+    await purchasesRef.push(purchaseData);
+  }
+
+
+  document.getElementById("purchaseItemInput").value = "";
+  document.getElementById("purchaseNotes").value = "";
+  document.getElementById("purchaseLinks").value = "";
+
+  hidePurchaseModal();
+
+}
+
+
+
+
+async function togglePurchase(id, value) {
+
+  await purchasesRef.child(id).update({
+    purchased: value
+  });
+
+}
+
+async function deletePurchase(id) {
+
+  await purchasesRef.child(id).remove();
+
+}
+
+
+async function saveTask() {
+
+  try {
+
+    const fileInput = document.getElementById("taskFile");
+
+    const file = fileInput.files[0];
+
+    const task = {
+
+      title: document.getElementById("taskTitle").value,
+
+      category: document.getElementById("taskCategory").value,
+
+      deadline:
+        document.getElementById("taskNoDeadline").checked
+          ? "N/A"
+          : document.getElementById("taskDeadline").value,
+
+      priority: document.getElementById("taskPriority").value,
+
+      status: document.getElementById("taskStatus").value,
+
+      vendor: document.getElementById("taskVendor").value,
+
+      progress: 0,
+
+      completed:
+        document.getElementById("taskStatus").value === "Completed"
+
+    };
+
+    if(file) {
+
+      task.fileName = file.name;
+
+      task.fileData = await new Promise((resolve) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () =>
+          resolve(reader.result);
+
+        reader.readAsDataURL(file);
+
+      });
+
+    }
+
+    if(!task.title) {
+
+      alert("Please enter a task title.");
+      return;
+    }
+
+    if(editingTaskId) {
+
+      const existingTask =
+        tasks.find(t => t.id === editingTaskId);
+
+      if(existingTask && !file) {
+
+        task.fileName = existingTask.fileName || "";
+        task.fileData = existingTask.fileData || "";
+
+      }
+
+      await tasksRef.child(editingTaskId).update(task);
+
+    } else {
+
+      task.fileName = task.fileName || "";
+      task.fileData = task.fileData || "";
+
+      await tasksRef.push(task);
+
+    }
+
+    hideTaskModal();
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Firebase Error: " + error.message);
+  }
+}
+
+
+
+async function saveVendor() {
+
+  try {
+
+    const vendor = {
+
+      name: document.getElementById("vendorName").value,
+
+      category: document.getElementById("vendorCategory").value,
+
+      contact: document.getElementById("vendorContact").value,
+
+      email: document.getElementById("vendorEmail").value,
+
+      phone: document.getElementById("vendorPhone").value,
+
+      deposit: document.getElementById("vendorDeposit").value,
+
+      website: document.getElementById("vendorWebsite").value
+
+    };
+
+    if(!vendor.name) {
+
+      alert("Please enter a vendor name.");
+      return;
+    }
+
+    if(editingVendorId) {
+
+      await vendorsRef.child(editingVendorId).update(vendor);
+
+    } else {
+
+      await vendorsRef.push(vendor);
+
+    }
+
+    hideVendorModal();
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Firebase Error: " + error.message);
+  }
+}
+
+
+async function updateTaskStatus(id, value) {
+
+  await tasksRef.child(id).update({
+
+    status: value,
+
+
+    completed:
+      value === "Completed"
+        ? true
+        : false
+
+  });
+
+}
+
+async function updateTaskPriority(id, value) {
+
+  await tasksRef.child(id).update({
+    priority: value
+  });
+
+}
+
+async function markTaskComplete(id) {
+
+  await tasksRef.child(id).update({
+
+
+    status: "Completed",
+    completed: true
+
+  });
+
+}
+
+
+function editTask(id) {
+
+  const task =
+    tasks.find(t => t.id === id);
+
+  if(!task) return;
+
+  showTaskModal(task);
+
+}
+
+
+
+function editVendor(id) {
+
+  const vendor =
+    vendors.find(v => v.id === id);
+
+  if(!vendor) return;
+
+  showVendorModal(vendor);
+
+}
+
+
+
+
+function showMeetingModal(meeting = null) {
+
+  editingMeetingId = meeting ? meeting.id : null;
+
+  document.getElementById("meetingModalTitle").textContent =
+    meeting ? "Edit Meeting" : "Add Meeting";
+
+  document.getElementById("meetingModalVendor").value =
+    meeting?.vendor || "";
+
+  document.getElementById("meetingModalTitleInput").value =
+    meeting?.title || "";
+
+  document.getElementById("meetingModalDate").value =
+    meeting?.date || "";
+
+  document.getElementById("meetingModalTime").value =
+    meeting?.time || "";
+
+  document.getElementById("meetingModalEndTime").value =
+    meeting?.endTime || "";
+
+  document.getElementById("meetingModalDetails").value =
+    meeting?.details || "";
+
+  document.getElementById("meetingModal")
+    .classList.remove("hidden");
+}
+
+function hideMeetingModal() {
+
+  document.getElementById("meetingModal")
+    .classList.add("hidden");
+
+  editingMeetingId = null;
+}
+
+
+function renderMeetings() {
+
+  const container =
+    document.getElementById("meetingList");
+
+  container.innerHTML = "";
+
+  meetings.sort((a,b) => {
+
+    const aDate =
+      new Date(`${a.date} ${a.time}`);
+
+    const bDate =
+      new Date(`${b.date} ${b.time}`);
+
+    return aDate - bDate;
+
+  });
+
+  meetings.forEach((meeting) => {
+
+    const googleUrl =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(meeting.title)}&dates=${meeting.date.replace(/-/g,'')}T${meeting.time.replace(':','')}00/${meeting.date.replace(/-/g,'')}T${(meeting.endTime || meeting.time).replace(':','')}00&details=${encodeURIComponent(meeting.details || "")}`;
+
+    const div = document.createElement("div");
+
+    div.className =
+      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+
+    div.innerHTML = `
+
+      <div class="flex justify-between items-start gap-3 mobile-stack">
+
+        <div>
+
+          <h3 class="text-xl font-bold">
+            ${meeting.title}
+          </h3>
+
+          <p class="text-gray-500">
+            ${meeting.vendor}
+          </p>
+
+          <p class="text-sm mt-2">
+            ${formatReadableDate(meeting.date)} from ${formatStandardTime(meeting.time)} to ${formatStandardTime(meeting.endTime || meeting.time)}
+          </p>
+
+          ${meeting.details ? `
+            <p class="text-sm mt-2">
+              ${meeting.details}
+            </p>
+          ` : ""}
+
+        </div>
+
+        <div class="flex gap-2">
+
+          <a
+            href="${googleUrl}"
+            target="_blank"
+            class="bg-[#9caf88] text-white px-3 py-2 rounded-lg text-sm">
+            Add to Google Calendar
+          </a>
+
+          <button
+            onclick="editMeeting('${meeting.id}')"
+            class="bg-[#9caf88] text-white px-3 py-2 rounded-lg text-sm">
+            Edit
+          </button>
+
+          <button
+            onclick="deleteMeeting('${meeting.id}')"
+            class="text-red-500 font-bold">
+            ✕
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+
+async function saveMeeting() {
+
+  const meeting = {
+
+    vendor:
+      document.getElementById("meetingModalVendor").value,
+
+    title:
+      document.getElementById("meetingModalTitleInput").value,
+
+    date:
+      document.getElementById("meetingModalDate").value,
+
+    time:
+      document.getElementById("meetingModalTime").value,
+
+    endTime:
+      document.getElementById("meetingModalEndTime").value,
+
+    details:
+      document.getElementById("meetingModalDetails").value
+
+  };
+
+  if(!meeting.title) {
+
+    alert("Please enter a meeting title.");
+    return;
+  }
+
+  if(editingMeetingId) {
+
+    await meetingsRef.child(editingMeetingId).update(meeting);
+
+  } else {
+
+    await meetingsRef.push(meeting);
+
+  }
+
+  hideMeetingModal();
+
+}
+
+
+function editMeeting(id) {
+
+  const meeting =
+    meetings.find(m => m.id === id);
+
+  if(!meeting) {
+    console.log("Meeting not found:", id);
+    return;
+  }
+
+  showMeetingModal(meeting);
+}
+
+
+
+
+
+
+
+function formatReadableDate(dateString) {
+
+  if(!dateString) return "";
+
+  const date = new Date(dateString + "T00:00:00");
+
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+
+}
+
+function formatStandardTime(time) {
+
+  if(!time) return "";
+
+  const [hours, minutes] = time.split(":");
+
+  const date = new Date();
+
+  date.setHours(parseInt(hours, 10));
+  date.setMinutes(parseInt(minutes, 10));
+
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+
+}
+
+
+function renderTimeline() {
+
+  const container =
+    document.getElementById("timelineList");
+
+  container.innerHTML = "";
+
+  timelineEvents.sort((a,b) =>
+    a.time.localeCompare(b.time)
+  );
+
+  timelineEvents.forEach((event) => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+
+    div.innerHTML = `
+
+      <div class="flex justify-between items-start gap-3 mobile-stack">
+
+        <div>
+
+          <h3 class="text-xl font-bold">
+            ${event.title}
+          </h3>
+
+          <p class="text-sm mt-2">
+            ${formatStandardTime(event.time)}
+          </p>
+
+          <div class="flex items-center gap-2 mt-2">
+
+            <p class="text-sm text-gray-500">
+              ${event.type || "Ceremony"}
+            </p>
+
+            <select
+              onchange="updateTimelineType('${event.id}', this.value)"
+              class="border rounded-lg p-1 text-sm">
+
+              <option value="Ceremony" ${(event.type || "Ceremony") === "Ceremony" ? "selected" : ""}>
+                Ceremony
+              </option>
+
+              <option value="Reception" ${event.type === "Reception" ? "selected" : ""}>
+                Reception
+              </option>
+
+            </select>
+
+          </div>
+
+          ${event.details ? `
+            <p class="text-sm mt-2">
+              ${event.details}
+            </p>
+          ` : ""}
+
+        </div>
+
+        <div class="flex gap-2">
+
+          <button
+            onclick="editTimelineEvent('${event.id}')"
+            class="bg-[#9caf88] text-white px-3 py-1 rounded text-xs">
+            Edit
+          </button>
+
+          <button
+            onclick="deleteTimelineEvent('${event.id}')"
+            class="text-red-500 font-bold">
+            ✕
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+    container.appendChild(div);
+
+  });
+
+}
+
+
+
+
+function showTimelineModal(event = null) {
+
+  editingTimelineId = event ? event.id : null;
+
+  document.getElementById("timelineModalTitle").textContent =
+    event ? "Edit Timeline Event" : "Add Timeline Event";
+
+  document.getElementById("timelineModalTime").value =
+    event?.time || "";
+
+  document.getElementById("timelineModalTitleInput").value =
+    event?.title || "";
+
+  document.getElementById("timelineModalType").value =
+    event?.type || "Ceremony";
+
+  document.getElementById("timelineModalDetails").value =
+    event?.details || "";
+
+  document.getElementById("timelineModal")
+    .classList.remove("hidden");
+}
+
+function hideTimelineModal() {
+
+  document.getElementById("timelineModal")
+    .classList.add("hidden");
+
+  editingTimelineId = null;
+}
+
+async function saveTimelineEvent() {
+
+  const event = {
+
+    time:
+      document.getElementById("timelineModalTime").value,
+
+    title:
+      document.getElementById("timelineModalTitleInput").value,
+
+    type:
+      document.getElementById("timelineModalType").value,
+
+    details:
+      document.getElementById("timelineModalDetails").value
+
+  };
+
+  if(!event.title) {
+
+    alert("Please enter an event title.");
+    return;
+  }
+
+  if(editingTimelineId) {
+
+    await timelineRef.child(editingTimelineId).update(event);
+
+  } else {
+
+    await timelineRef.push(event);
+
+  }
+
+  hideTimelineModal();
+}
+
+function editTimelineEvent(id) {
+
+  const event =
+    timelineEvents.find(e => e.id === id);
+
+  if(!event) return;
+
+  showTimelineModal(event);
+}
+
+
+async function printSchedule() {
+
+  try {
+
+    const ceremony =
+      timelineEvents.filter(event =>
+        (event.type || "Ceremony") === "Ceremony"
+      );
+
+    const reception =
+      timelineEvents.filter(event =>
+        event.type === "Reception"
+      );
+
+    const {
+      Document,
+      Packer,
+      Paragraph,
+      HeadingLevel
+    } = window.docx;
+
+    const doc = new Document({
+
+      sections: [{
+
+        children: [
+
+          new Paragraph({
+            text: "Wedding Day Schedule",
+            heading: HeadingLevel.TITLE
+          }),
+
+          new Paragraph({
+            text: "Ceremony",
+            heading: HeadingLevel.HEADING_1
+          }),
+
+          ...ceremony.flatMap(event => [
+
+            new Paragraph({
+              text: `${formatStandardTime(event.time)} — ${event.title}`
+            }),
+
+            new Paragraph({
+              text: event.details || ""
+            })
+
+          ]),
+
+          new Paragraph({
+            text: "Reception",
+            heading: HeadingLevel.HEADING_1
+          }),
+
+          ...reception.flatMap(event => [
+
+            new Paragraph({
+              text: `${formatStandardTime(event.time)} — ${event.title}`
+            }),
+
+            new Paragraph({
+              text: event.details || ""
+            })
+
+          ])
+
+        ]
+
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "Wedding_Schedule.docx";
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Print Schedule Error: " + error.message);
+
+  }
+
+}
+
+
+async function updateTimelineType(id, value) {
+
+  await timelineRef.child(id).update({
+    type: value
+  });
+
+}
+
+
+
+async function deleteTimelineEvent(id) {
+
+  await timelineRef.child(id).remove();
+
+}
+
+
+async function deleteMeeting(id) {
+
+  await meetingsRef.child(id).remove();
+
+}
+
+async function deleteTask(id) {
+
+  await tasksRef.child(id).remove();
+}
+
+async function deleteVendor(id) {
+
+  await vendorsRef.child(id).remove();
+}
+
+</script>
+
+<!-- COMPLETED TASKS MODAL -->
+
+<div id="completedModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+
+  <div class="bg-white rounded-3xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+
+    <div class="flex justify-between items-center mb-6">
+
+      <h2 class="text-3xl font-black">
+        Completed Tasks
+      </h2>
+
+      <button onclick="hideCompletedModal()"
+        class="bg-gray-200 px-4 py-2 rounded-xl">
+        Close
+      </button>
+
+    </div>
+
+    <div id="completedTaskList" class="space-y-4"></div>
+
+  </div>
+
+</div>
+
+<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000c3f0720f9f90a2b466b9d243%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D578c3a6de40f7863adf665af76ef0f70baf3febb1ab331618b2b7d13c6ce3a9f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
+<script>
+
+let dinnerHouseholds = [];
+
+dinnerHouseholdsRef.on("value", (snapshot) => {
+
+  const data = snapshot.val();
+
+  if(data) {
+
+    dinnerHouseholds = data;
+
+    normalizeDinnerHouseholds();
+
+    dinnerHouseholdsRef.set(dinnerHouseholds);
+
+    renderDinnerHouseholds();
+
+  }
+
+});
+
+
+function normalizeDinnerHouseholds() {
+
+  dinnerHouseholds = dinnerHouseholds.map(household => {
+
+    if(!household.members) {
+      household.members = [];
+    }
+
+    household.members = household.members.map(member => {
+
+      if(typeof member === "string") {
+
+        return {
+          name: member,
+          dinnerChoice: ""
+        };
+
+      }
+
+      return {
+        name: member.name || "",
+        dinnerChoice: member.dinnerChoice || ""
+      };
+
+    });
+
+    if(typeof household.emailSent !== "boolean") {
+      household.emailSent = false;
+    }
+
+    return household;
+
+  });
+
+}
+
+
+function initializeDinnerTab() {
+
+  const btn = document.getElementById("generateDinnerEmailsBtn");
+
+  if(btn) {
+
+    btn.addEventListener("click", processDinnerCSV);
+
+  }
+
+  const resetBtn =
+    document.getElementById("resetDinnerEmailsBtn");
+
+  if(resetBtn) {
+
+    resetBtn.addEventListener("click", () => {
+
+      const confirmed = confirm(
+        "Are you sure you want to reset the dinner list? This will permanently remove all households, email statuses, and dinner selections."
+      );
+
+      if(confirmed) {
+
+        resetDinnerList();
+
+      }
+
+    });
+
+  }
+
+}
+
+window.addEventListener("load", initializeDinnerTab);
+
+function resetDinnerList() {
+
+  dinnerHouseholds = [];
+
+  dinnerHouseholdsRef.remove();
+
+  const upload =
+    document.getElementById("dinnerCsvUpload");
+
+  if(upload) {
+
+    upload.value = "";
+
+  }
+
+  const container =
+    document.getElementById("dinnerResults");
+
+  if(container) {
+
+    container.innerHTML = `
+      <div class="bg-white rounded-2xl p-6 text-gray-500">
+        Upload a new RSVP CSV to generate household emails.
+      </div>
+    `;
+
+  }
+
+}
+
+function processDinnerCSV() {
+
+  console.log("Dinner CSV processing started");
+
+  const upload = document.getElementById("dinnerCsvUpload");
+
+  if(!upload || !upload.files.length) {
+
+    alert("Please upload your Knot RSVP CSV first.");
+
+    return;
+
+  }
+
+  const file = upload.files[0];
+
+  Papa.parse(file, {
+
+    header: true,
+
+    skipEmptyLines: true,
+
+    complete: function(results) {
+
+      try {
+
+        const data = results.data;
+
+        console.log("CSV rows:", data.length);
+
+        if(!data.length) {
+
+          alert("No guest rows found in CSV.");
+
+          return;
+
+        }
+
+        const householdMap = {};
+
+        
+        data.forEach(row => {
+
+          const firstName = (row["First Name"] || "").trim();
+
+          const lastName = (row["Last Name"] || "").trim();
+
+          const party = (row["Party"] || "").trim();
+
+          const rsvp =
+            (row["Wedding Day - RSVP"] || "").toLowerCase().trim();
+
+          const email =
+            (row["Wedding Day - What is your preferred email for updates?"] || "").trim();
+
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          if(!fullName) return;
+
+          const attending =
+            rsvp.includes("yes") ||
+            rsvp.includes("attending");
+
+          if(!attending) return;
+
+          const householdName =
+            party || `${lastName} Household`;
+
+          if(!householdMap[householdName]) {
+
+            householdMap[householdName] = {
+
+              household: householdName,
+
+              email: email,
+
+              emailSent: false,
+
+              members: []
+
+            };
+
+          }
+
+          householdMap[householdName].members.push({
+
+            name: fullName,
+
+            dinnerChoice: ""
+
+          });
+
+          if(email && !householdMap[householdName].email) {
+
+            householdMap[householdName].email = email;
+
+          }
+
+        });
+
+        dinnerHouseholds = Object.values(householdMap);
+
+        dinnerHouseholdsRef.set(dinnerHouseholds);
+
+        renderDinnerHouseholds();
+
+
+      } catch(error) {
+
+        console.error(error);
+
+        alert("CSV processing error: " + error.message);
+
+      }
+
+    },
+
+    error: function(error) {
+
+      console.error(error);
+
+      alert("CSV parse error.");
+
+    }
+
+  });
+
+}
+
+
+
+function formatPhoneNumber(phone) {
+
+  if(!phone) return "";
+
+  const digits =
+    phone.replace(/\D/g, "");
+
+  if(digits.length === 10) {
+
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+
+  }
+
+  if(digits.length === 11 && digits.startsWith("1")) {
+
+    return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+
+  }
+
+  return phone;
+
+}
+
+
+function renderDinnerHouseholds() {
+
+  const container = document.getElementById("dinnerResults");
+
+  if(!container) return;
+
+  container.innerHTML = "";
+
+  const totalGuests =
+    dinnerHouseholds.reduce((sum, household) => {
+
+      return sum + (household.members ? household.members.length : 0);
+
+    }, 0);
+
+  const guestCounter =
+    document.getElementById("attendingGuestCount");
+
+  if(guestCounter) {
+    guestCounter.textContent = totalGuests;
+  }
+
+  const householdCounter =
+    document.getElementById("householdCount");
+
+  if(householdCounter) {
+    householdCounter.textContent = dinnerHouseholds.length;
+  }
+
+  if(!dinnerHouseholds.length) {
+
+    container.innerHTML = `
+      <div class="bg-white rounded-2xl p-6">
+        No attending households found.
+      </div>
+    `;
+
+    return;
+
+  }
+
+  dinnerHouseholds.forEach((household, householdIndex) => {
+
+    const guestLines =
+      household.members
+        .map(member => `- ${member.name || member}`)
+        .join("\n");
+
+    const householdFirstNames = household.members
+      .map(member => member.name)
+      .filter(name =>
+        !name.toLowerCase().includes("guest") &&
+        !name.toLowerCase().includes("+1") &&
+        !name.toLowerCase().includes("plus one")
+      )
+      .map(name => name.split(" ")[0]);
+
+    let greeting = "Hi";
+
+    if(householdFirstNames.length === 1) {
+
+      greeting += ` ${householdFirstNames[0]}`;
+
+    } else if(householdFirstNames.length === 2) {
+
+      greeting += ` ${householdFirstNames[0]} and ${householdFirstNames[1]}`;
+
+    } else if(householdFirstNames.length > 2) {
+
+      greeting += " " +
+        householdFirstNames.slice(0, -1).join(", ") +
+        ", and " +
+        householdFirstNames[householdFirstNames.length - 1];
+
+    }
+
+    const body = `${greeting},
+
+We are so excited to celebrate with you at our wedding!
+
+Could you please reply with a dinner choice for EACH guest in your household by May 30th?
+
+Dinner Menu
+
+Entree Options:
+• Red Pepper Sirloin (Beef)
+• Chipotle Peach Chicken (Chicken)
+• Orzo Stuffed Portobello Mushroom (Vegetarian)
+• Chicken Fingers and Mac and Cheese (Kids Meal)
+
+Sides:
+• Caramelized Onion & Boursin Mashed Potatoes
+• Maple Bacon Brussels Sprouts
+
+Please copy the list below and add each person's meal choice next to their name:
+
+${household.members.map(member => `${member.name}:`).join("\n")}
+
+Example:
+John Smith: Red Pepper Sirloin
+Jane Smith: Orzo Stuffed Portobello Mushroom
+
+Thank you so much!
+
+Kayla & Noah`;
+
+    const gmailUrl =
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(household.email || "")}&su=${encodeURIComponent("Wedding Dinner Selection")}&body=${encodeURIComponent(body)}`;
+
+    const memberHtml = household.members.map((member, memberIndex) => {
+
+      const name =
+        member.name || member;
+
+      const dinnerChoice =
+        member.dinnerChoice || "";
+
+      return `
+
+        <div class="bg-[#f7f2ee] rounded-xl p-4 mb-3">
+
+          <div class="flex justify-between items-center mobile-stack gap-4">
+
+            <div class="font-semibold text-lg">
+              ${name}
+            </div>
+
+            <select
+              onchange="updateDinnerChoice(${householdIndex}, ${memberIndex}, this.value)"
+              class="border rounded-xl p-3 bg-white min-w-[220px]">
+
+              <option value="">Select Dinner Choice</option>
+
+              <option value="Chicken"
+                ${dinnerChoice === "Chicken" ? "selected" : ""}>
+                Chicken
+              </option>
+
+              <option value="Beef"
+                ${dinnerChoice === "Beef" ? "selected" : ""}>
+                Beef
+              </option>
+
+              <option value="Vegetarian"
+                ${dinnerChoice === "Vegetarian" ? "selected" : ""}>
+                Vegetarian
+              </option>
+
+              <option value="Kids Meal"
+                ${dinnerChoice === "Kids Meal" ? "selected" : ""}>
+                Kids Meal
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+
+    const card = document.createElement("div");
+
+    card.className =
+      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+
+    card.innerHTML = `
+
+      <div class="flex justify-between items-start gap-6 mobile-stack">
+
+        <div class="flex-1">
+
+          <div class="flex items-center gap-4 mb-3 mobile-stack">
+
+            <h3 class="text-2xl font-bold text-[#9caf88] flex items-center gap-2">
+              ${household.household}
+
+              ${!household.email ? `
+                <span
+                  title="Missing email address"
+                  class="text-red-500 text-3xl leading-none">
+                  *
+                </span>
+              ` : ""}
+            </h3>
+
+            <label class="flex items-center gap-2 text-sm">
+
+              <input
+                type="checkbox"
+                ${household.emailSent ? "checked" : ""}
+                onchange="toggleEmailSent(${householdIndex}, this.checked)">
+
+              Email Sent
+
+            </label>
+
+          </div>
+
+          <div class="mb-4 space-y-1">
+
+            <p class="text-sm text-gray-500">
+              📧 ${household.email || "No email found"}
+            </p>
+
+            <p class="text-sm text-gray-500">
+              📱 ${household.phone ? formatPhoneNumber(household.phone) : "No phone number found"}
+            </p>
+
+          </div>
+
+          ${memberHtml}
+
+        </div>
+
+        <a
+          href="${gmailUrl}"
+          target="_blank"
+          class="bg-[#d8a7b1] hover:bg-[#c7929d] text-white px-5 py-3 rounded-2xl text-center whitespace-nowrap">
+          Draft Gmail Email
+        </a>
+
+      </div>
+
+    `;
+
+    container.appendChild(card);
+
+  });
+
+}
+
+
+</script>
+
+</body>
 </html>
