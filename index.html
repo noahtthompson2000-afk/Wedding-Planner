@@ -13,7 +13,101 @@ function toggleEmailSent(householdIndex, checked) {
 
   dinnerHouseholdsRef.set(dinnerHouseholds);
 
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
+
 }
+
+
+let dinnerSearchTerm = "";
+
+function getPendingDinnerCount() {
+
+  let pending = 0;
+
+  (dinnerHouseholds || []).forEach(household => {
+
+    (household.members || []).forEach(member => {
+
+      if(typeof member !== "string") {
+
+        const choice = member.dinnerChoice || "";
+
+        if(!choice || choice.trim() === "") {
+          pending++;
+        }
+
+      }
+
+    });
+
+  });
+
+  return pending;
+
+}
+
+
+function mergeDinnerHouseholds(existingList, newList) {
+
+  const existingChoices = new Map();
+
+  (existingList || []).forEach(household => {
+
+    (household.members || []).forEach(member => {
+
+      if(typeof member !== "string") {
+
+        const normalizedName =
+          String(member.name || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+
+        existingChoices.set(
+          normalizedName,
+          member.dinnerChoice || ""
+        );
+
+      }
+
+    });
+
+  });
+
+  return (newList || []).map(household => ({
+
+    ...household,
+
+    members: (household.members || []).map(member => {
+
+      if(typeof member === "string") {
+        return member;
+      }
+
+      const normalizedName =
+        String(member.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
+
+      return {
+        ...member,
+        dinnerChoice:
+          existingChoices.get(normalizedName) ||
+          member.dinnerChoice ||
+          ""
+      };
+
+    })
+
+  }));
+
+}
+
 
 function updateDinnerChoice(householdIndex, memberIndex, value) {
 
@@ -22,6 +116,12 @@ function updateDinnerChoice(householdIndex, memberIndex, value) {
     .dinnerChoice = value;
 
   dinnerHouseholdsRef.set(dinnerHouseholds);
+
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
 
 }
 
@@ -484,6 +584,18 @@ function downloadDinnerCSV() {
         </button>
 
         <button
+          id="uploadDinnerChoicesBtn"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-2xl">
+          Upload Choices Backup
+        </button>
+
+        <input
+          id="dinnerChoicesUpload"
+          type="file"
+          accept=".csv"
+          class="hidden">
+
+        <button
           id="resetDinnerEmailsBtn"
           class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-2xl">
           Reset List
@@ -513,6 +625,15 @@ function downloadDinnerCSV() {
         </h3>
       </div>
 
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Awaiting Responses
+        </p>
+        <h3 id="pendingDinnerCount" class="text-4xl font-black text-rose-500 mt-2">
+          0
+        </h3>
+      </div>
+
       <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30 flex items-center justify-center">
         <button
           onclick="downloadDinnerCSV()"
@@ -523,7 +644,35 @@ function downloadDinnerCSV() {
 
     </div>
 
-    <div id="dinnerResults" class="space-y-4"></div>
+    <div class="mb-6">
+      <input
+        id="dinnerSearchInput"
+        type="text"
+        placeholder="Search households or guests..."
+        oninput="renderDinnerHouseholds()"
+        class="w-full border rounded-2xl p-4">
+    </div>
+
+    
+    
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30 mb-6">
+      <div class="flex gap-4 mobile-stack items-center">
+        <input
+          id="dinnerSearchInput"
+          type="text"
+          placeholder="Search households or guests..."
+          class="flex-1 border rounded-2xl p-3">
+
+        <div class="text-lg font-bold text-[#9caf88] whitespace-nowrap">
+          Waiting For Orders:
+          <span id="pendingDinnerCount">0</span>
+        </div>
+      </div>
+
+<div id="dinnerResults" class="space-y-4"></div>
+    
 
   </div>
 
@@ -2479,6 +2628,128 @@ async function deleteVendor(id) {
   await vendorsRef.child(id).remove();
 }
 
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const searchInput = document.getElementById("dinnerSearchInput");
+
+  if(searchInput) {
+
+    searchInput.addEventListener("input", (e) => {
+
+      dinnerSearchTerm = e.target.value.toLowerCase();
+
+      if(typeof renderDinnerResults === "function") {
+        renderDinnerResults();
+      }
+
+    });
+
+  }
+
+  const uploadBtn = document.getElementById("uploadDinnerChoicesBtn");
+
+  const uploadInput = document.getElementById("dinnerChoicesUpload");
+
+  if(uploadBtn && uploadInput) {
+
+    uploadBtn.addEventListener("click", () => {
+      uploadInput.click();
+    });
+
+    
+    uploadInput.addEventListener("change", (event) => {
+
+      const file = event.target.files[0];
+
+      if(!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+
+        complete: function(results) {
+
+          const rows = results.data;
+
+          const guestChoiceMap = new Map();
+
+          rows.forEach(row => {
+
+            const guest =
+              String(row["Guest"] || "")
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ");
+
+            const choice =
+              String(row["Dinner Choice"] || "")
+                .trim();
+
+            if(guest && choice) {
+
+              guestChoiceMap.set(guest, choice);
+
+            }
+
+          });
+
+          let updatedCount = 0;
+
+          dinnerHouseholds.forEach(household => {
+
+            (household.members || []).forEach(member => {
+
+              if(typeof member !== "string") {
+
+                const memberName =
+                  String(member.name || "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+
+                if(guestChoiceMap.has(memberName)) {
+
+                  member.dinnerChoice =
+                    guestChoiceMap.get(memberName);
+
+                  updatedCount++;
+
+                }
+
+              }
+
+            });
+
+          });
+
+          dinnerHouseholdsRef.set(dinnerHouseholds);
+
+          const pendingCounter =
+            document.getElementById("pendingDinnerCount");
+
+          if(pendingCounter) {
+
+            pendingCounter.textContent =
+              getPendingDinnerCount();
+
+          }
+
+          alert(
+            `Dinner choices uploaded successfully. Updated ${updatedCount} guests.`
+          );
+
+        }
+
+      });
+
+    });
+
+
+  }
+
+});
+
 </script>
 
 <!-- COMPLETED TASKS MODAL -->
@@ -2721,6 +2992,12 @@ function processDinnerCSV() {
 
       dinnerHouseholdsRef.set(dinnerHouseholds);
 
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
+
       renderDinnerHouseholds();
 
     }
@@ -2754,7 +3031,101 @@ function toggleEmailSent(householdIndex, checked) {
 
   dinnerHouseholdsRef.set(dinnerHouseholds);
 
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
+
 }
+
+
+let dinnerSearchTerm = "";
+
+function getPendingDinnerCount() {
+
+  let pending = 0;
+
+  (dinnerHouseholds || []).forEach(household => {
+
+    (household.members || []).forEach(member => {
+
+      if(typeof member !== "string") {
+
+        const choice = member.dinnerChoice || "";
+
+        if(!choice || choice.trim() === "") {
+          pending++;
+        }
+
+      }
+
+    });
+
+  });
+
+  return pending;
+
+}
+
+
+function mergeDinnerHouseholds(existingList, newList) {
+
+  const existingChoices = new Map();
+
+  (existingList || []).forEach(household => {
+
+    (household.members || []).forEach(member => {
+
+      if(typeof member !== "string") {
+
+        const normalizedName =
+          String(member.name || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+
+        existingChoices.set(
+          normalizedName,
+          member.dinnerChoice || ""
+        );
+
+      }
+
+    });
+
+  });
+
+  return (newList || []).map(household => ({
+
+    ...household,
+
+    members: (household.members || []).map(member => {
+
+      if(typeof member === "string") {
+        return member;
+      }
+
+      const normalizedName =
+        String(member.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
+
+      return {
+        ...member,
+        dinnerChoice:
+          existingChoices.get(normalizedName) ||
+          member.dinnerChoice ||
+          ""
+      };
+
+    })
+
+  }));
+
+}
+
 
 function updateDinnerChoice(householdIndex, memberIndex, value) {
 
@@ -2763,6 +3134,12 @@ function updateDinnerChoice(householdIndex, memberIndex, value) {
     .dinnerChoice = value;
 
   dinnerHouseholdsRef.set(dinnerHouseholds);
+
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
 
 }
 
@@ -2826,6 +3203,24 @@ function renderDinnerHouseholds() {
 
   }
 
+  const pendingResponses =
+    dinnerHouseholds.reduce((sum, household) => {
+
+      return sum + household.members.filter(member =>
+        !member.dinnerChoice || member.dinnerChoice.trim() === ""
+      ).length;
+
+    }, 0);
+
+  const pendingCounter =
+    document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+
+    pendingCounter.textContent = pendingResponses;
+
+  }
+
   if(!dinnerHouseholds.length) {
 
     container.innerHTML = `
@@ -2838,7 +3233,24 @@ function renderDinnerHouseholds() {
 
   }
 
+  const searchValue =
+    (document.getElementById("dinnerSearchInput")?.value || "")
+      .toLowerCase()
+      .trim();
+
   dinnerHouseholds.forEach((household, householdIndex) => {
+
+    const matchesSearch =
+      !searchValue ||
+      (household.household || "").toLowerCase().includes(searchValue) ||
+      (household.email || "").toLowerCase().includes(searchValue) ||
+      household.members.some(member =>
+        (member.name || "").toLowerCase().includes(searchValue)
+      );
+
+    if(!matchesSearch) {
+      return;
+    }
 
     const guestLines =
       household.members
@@ -2943,6 +3355,11 @@ Kayla & Noah`;
                 <option value="Kids Meal"
                   ${member.dinnerChoice === "Kids Meal" ? "selected" : ""}>
                   Kids Meal
+                </option>
+
+                <option value="Not Eating"
+                  ${member.dinnerChoice === "Not Eating" ? "selected" : ""}>
+                  Not Eating
                 </option>
 
               </select>
@@ -3487,6 +3904,18 @@ function downloadDinnerCSV() {
         </button>
 
         <button
+          id="uploadDinnerChoicesBtn"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-2xl">
+          Upload Choices Backup
+        </button>
+
+        <input
+          id="dinnerChoicesUpload"
+          type="file"
+          accept=".csv"
+          class="hidden">
+
+        <button
           id="resetDinnerEmailsBtn"
           class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-2xl">
           Reset List
@@ -3516,6 +3945,15 @@ function downloadDinnerCSV() {
         </h3>
       </div>
 
+      <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30">
+        <p class="text-sm uppercase tracking-wide text-gray-500">
+          Awaiting Responses
+        </p>
+        <h3 id="pendingDinnerCount" class="text-4xl font-black text-rose-500 mt-2">
+          0
+        </h3>
+      </div>
+
       <div class="bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30 flex items-center justify-center">
         <button
           onclick="downloadDinnerCSV()"
@@ -3526,7 +3964,21 @@ function downloadDinnerCSV() {
 
     </div>
 
+    <div class="mb-6">
+      <input
+        id="dinnerSearchInput"
+        type="text"
+        placeholder="Search households or guests..."
+        oninput="renderDinnerHouseholds()"
+        class="w-full border rounded-2xl p-4">
+    </div>
+
+    
+    
+    </div>
+
     <div id="dinnerResults" class="space-y-4"></div>
+    
 
   </div>
 
@@ -5482,6 +5934,128 @@ async function deleteVendor(id) {
   await vendorsRef.child(id).remove();
 }
 
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const searchInput = document.getElementById("dinnerSearchInput");
+
+  if(searchInput) {
+
+    searchInput.addEventListener("input", (e) => {
+
+      dinnerSearchTerm = e.target.value.toLowerCase();
+
+      if(typeof renderDinnerResults === "function") {
+        renderDinnerResults();
+      }
+
+    });
+
+  }
+
+  const uploadBtn = document.getElementById("uploadDinnerChoicesBtn");
+
+  const uploadInput = document.getElementById("dinnerChoicesUpload");
+
+  if(uploadBtn && uploadInput) {
+
+    uploadBtn.addEventListener("click", () => {
+      uploadInput.click();
+    });
+
+    
+    uploadInput.addEventListener("change", (event) => {
+
+      const file = event.target.files[0];
+
+      if(!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+
+        complete: function(results) {
+
+          const rows = results.data;
+
+          const guestChoiceMap = new Map();
+
+          rows.forEach(row => {
+
+            const guest =
+              String(row["Guest"] || "")
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, " ");
+
+            const choice =
+              String(row["Dinner Choice"] || "")
+                .trim();
+
+            if(guest && choice) {
+
+              guestChoiceMap.set(guest, choice);
+
+            }
+
+          });
+
+          let updatedCount = 0;
+
+          dinnerHouseholds.forEach(household => {
+
+            (household.members || []).forEach(member => {
+
+              if(typeof member !== "string") {
+
+                const memberName =
+                  String(member.name || "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+
+                if(guestChoiceMap.has(memberName)) {
+
+                  member.dinnerChoice =
+                    guestChoiceMap.get(memberName);
+
+                  updatedCount++;
+
+                }
+
+              }
+
+            });
+
+          });
+
+          dinnerHouseholdsRef.set(dinnerHouseholds);
+
+          const pendingCounter =
+            document.getElementById("pendingDinnerCount");
+
+          if(pendingCounter) {
+
+            pendingCounter.textContent =
+              getPendingDinnerCount();
+
+          }
+
+          alert(
+            `Dinner choices uploaded successfully. Updated ${updatedCount} guests.`
+          );
+
+        }
+
+      });
+
+    });
+
+
+  }
+
+});
+
 </script>
 
 <!-- COMPLETED TASKS MODAL -->
@@ -5526,6 +6100,12 @@ dinnerHouseholdsRef.on("value", (snapshot) => {
     normalizeDinnerHouseholds();
 
     dinnerHouseholdsRef.set(dinnerHouseholds);
+
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
 
     renderDinnerHouseholds();
 
@@ -5740,6 +6320,12 @@ function processDinnerCSV() {
 
         dinnerHouseholdsRef.set(dinnerHouseholds);
 
+  const pendingCounter = document.getElementById("pendingDinnerCount");
+
+  if(pendingCounter) {
+    pendingCounter.textContent = getPendingDinnerCount();
+  }
+
         renderDinnerHouseholds();
 
 
@@ -5832,7 +6418,24 @@ function renderDinnerHouseholds() {
 
   }
 
+  const searchValue =
+    (document.getElementById("dinnerSearchInput")?.value || "")
+      .toLowerCase()
+      .trim();
+
   dinnerHouseholds.forEach((household, householdIndex) => {
+
+    const matchesSearch =
+      !searchValue ||
+      (household.household || "").toLowerCase().includes(searchValue) ||
+      (household.email || "").toLowerCase().includes(searchValue) ||
+      household.members.some(member =>
+        (member.name || "").toLowerCase().includes(searchValue)
+      );
+
+    if(!matchesSearch) {
+      return;
+    }
 
     const guestLines =
       household.members
