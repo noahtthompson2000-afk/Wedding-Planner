@@ -6,234 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wedding HQ Planner - Realtime DB</title>
 
-  <script src="https://cdn.tailwindcss.com">
-function toggleEmailSent(householdIndex, checked) {
-
-  dinnerHouseholds[householdIndex].emailSent = checked;
-
-  dinnerHouseholdsRef.set(dinnerHouseholds);
-
-  const pendingCounter = document.getElementById("pendingDinnerCount");
-
-  if(pendingCounter) {
-    pendingCounter.textContent = getPendingDinnerCount();
-  }
-
-}
-
-
-let dinnerSearchTerm = "";
-
-function getPendingDinnerCount() {
-
-  let pending = 0;
-
-  (dinnerHouseholds || []).forEach(household => {
-
-    (household.members || []).forEach(member => {
-
-      if(typeof member !== "string") {
-
-        const choice = member.dinnerChoice || "";
-
-        if(!choice || choice.trim() === "") {
-          pending++;
-        }
-
-      }
-
-    });
-
-  });
-
-  return pending;
-
-}
-
-
-function mergeDinnerHouseholds(existingList, newList) {
-
-  const existingChoices = new Map();
-
-  (existingList || []).forEach(household => {
-
-    (household.members || []).forEach(member => {
-
-      if(typeof member !== "string") {
-
-        const normalizedName =
-          String(member.name || "")
-            .trim()
-            .toLowerCase()
-            .replace(/\s+/g, " ");
-
-        existingChoices.set(
-          normalizedName,
-          member.dinnerChoice || ""
-        );
-
-      }
-
-    });
-
-  });
-
-  return (newList || []).map(household => ({
-
-    ...household,
-
-    members: (household.members || []).map(member => {
-
-      if(typeof member === "string") {
-        return member;
-      }
-
-      const normalizedName =
-        String(member.name || "")
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, " ");
-
-      return {
-        ...member,
-        dinnerChoice:
-          existingChoices.get(normalizedName) ||
-          member.dinnerChoice ||
-          ""
-      };
-
-    })
-
-  }));
-
-}
-
-
-function updateDinnerChoice(householdIndex, memberIndex, value) {
-
-  dinnerHouseholds[householdIndex]
-    .members[memberIndex]
-    .dinnerChoice = value;
-
-  dinnerHouseholdsRef.set(dinnerHouseholds);
-
-  const pendingCounter = document.getElementById("pendingDinnerCount");
-
-  if(pendingCounter) {
-    pendingCounter.textContent = getPendingDinnerCount();
-  }
-
-}
-
-
-function downloadDinnerCSV() {
-
-  try {
-
-    if(!dinnerHouseholds || !dinnerHouseholds.length) {
-
-      alert("No dinner data available.");
-
-      return;
-
-    }
-
-    const rows = [];
-
-    rows.push([
-      "Household",
-      "Email",
-      "Phone",
-      "Email Sent",
-      "Guest",
-      "Dinner Choice"
-    ]);
-
-    dinnerHouseholds.forEach(household => {
-
-      const householdName =
-        household.household || "";
-
-      const email =
-        household.email || "";
-
-      const emailSent =
-        household.emailSent ? "Yes" : "No";
-
-      (household.members || []).forEach(member => {
-
-        const guestName =
-          typeof member === "string"
-            ? member
-            : (member.name || "");
-
-        const dinnerChoice =
-          typeof member === "string"
-            ? ""
-            : (member.dinnerChoice || "");
-
-        rows.push([
-          householdName,
-          email,
-          household.phone ? formatPhoneNumber(household.phone) : "",
-          emailSent,
-          guestName,
-          dinnerChoice
-        ]);
-
-      });
-
-    });
-
-    const csvContent = rows.map(row => {
-
-      return row.map(field => {
-
-        const value =
-          String(field || "").replace(/"/g, '""');
-
-        return `"${value}"`;
-
-      }).join(",");
-
-    }).join("\n");
-
-    const blob =
-      new Blob([csvContent], {
-        type: "text/csv;charset=utf-8;"
-      });
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-      "wedding_dinner_tracking.csv";
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert("CSV download failed: " + error.message);
-
-  }
-
-}
-
-
-</script>
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -292,31 +65,13 @@ function downloadDinnerCSV() {
     }
   </style>
 
-
-
-<meta name="NetsparkQuiltingResult" total-length="29540" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="31015" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="35475" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="37592" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="40099" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="41327" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-<meta name="NetsparkQuiltingResult" total-length="44614" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
+<script>
+const $ = (id) => document.getElementById(id);
+</script>
 
-<meta name="NetsparkQuiltingResult" total-length="47311" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="51253" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="57917" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="60987" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w2577,w11756,w6565,w6563,w3034,w340,w3789,w3829,w3830,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -337,7 +92,6 @@ function downloadDinnerCSV() {
     </div>
 
   </div>
-
 
   <!-- TAB NAVIGATION -->
 
@@ -369,7 +123,6 @@ function downloadDinnerCSV() {
     </button>
 
   </div>
-
 
   <div id="tasksTab" class="tab-content">
 
@@ -423,7 +176,6 @@ function downloadDinnerCSV() {
   </div>
 
   
-
 
   <div class="grid lg:grid-cols-2 gap-8 mobile-grid-1">
 
@@ -551,7 +303,6 @@ function downloadDinnerCSV() {
 
 </div>
 
-
 <div id="whatsForDinnerTab" class="tab-content hidden">
 
   <div class="glass rounded-3xl p-6 shadow-lg">
@@ -644,9 +395,38 @@ function downloadDinnerCSV() {
 
     </div>
 
-    <div class="mb-6">
+    
+    <div id="dinnerChoiceSummary" class="grid md:grid-cols-5 gap-4 mb-6">
+      <div class="bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 text-center">
+        <p class="text-sm uppercase tracking-wide text-gray-500">Beef</p>
+        <h3 id="beefCount" class="text-3xl font-black text-[#9caf88] mt-2">0</h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 text-center">
+        <p class="text-sm uppercase tracking-wide text-gray-500">Chicken</p>
+        <h3 id="chickenCount" class="text-3xl font-black text-[#9caf88] mt-2">0</h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 text-center">
+        <p class="text-sm uppercase tracking-wide text-gray-500">Vegetarian</p>
+        <h3 id="vegetarianCount" class="text-3xl font-black text-[#9caf88] mt-2">0</h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 text-center">
+        <p class="text-sm uppercase tracking-wide text-gray-500">Kids Meal</p>
+        <h3 id="kidsCount" class="text-3xl font-black text-[#9caf88] mt-2">0</h3>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow border border-[#d8a7b1]/30 text-center">
+        <p class="text-sm uppercase tracking-wide text-gray-500">Not Eating</p>
+        <h3 id="notEatingCount" class="text-3xl font-black text-[#9caf88] mt-2">0</h3>
+      </div>
+    </div>
+
+
+<div class="mb-6">
       <input
-        id="dinnerSearchInput"
+        id="dinnerSearchInputSecondary"
         type="text"
         placeholder="Search households or guests..."
         oninput="renderDinnerHouseholds()"
@@ -678,9 +458,7 @@ function downloadDinnerCSV() {
 
 </div>
 
-
 <!-- TASK MODAL -->
-
 
 <div id="taskModal"
   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
@@ -698,7 +476,6 @@ function downloadDinnerCSV() {
       <input id="taskCategory"
         class="w-full border rounded-2xl p-3"
         placeholder="Category">
-
 
       <input id="taskDeadline"
         type="date"
@@ -730,7 +507,6 @@ function downloadDinnerCSV() {
         <option>Completed</option>
 
       </select>
-
 
       <select id="taskVendor"
         class="w-full border rounded-2xl p-3">
@@ -821,8 +597,6 @@ function downloadDinnerCSV() {
 
 </div>
 
-
-
 <!-- PURCHASE MODAL -->
 
 <div id="purchaseModal"
@@ -879,9 +653,6 @@ function downloadDinnerCSV() {
   </div>
 
 </div>
-
-
-
 
 <!-- MEETING MODAL -->
 
@@ -940,8 +711,6 @@ function downloadDinnerCSV() {
   </div>
 
 </div>
-
-
 
 <!-- TIMELINE MODAL -->
 
@@ -1008,7 +777,6 @@ REALTIME DATABASE RULES:
 }
 */
 
-
 function showTab(tabId) {
 
   document.querySelectorAll(".tab-content")
@@ -1027,7 +795,6 @@ function showTab(tabId) {
   event.target.classList.add("bg-[#9caf88]");
 
 }
-
 
 const firebaseConfig = {
 
@@ -1083,7 +850,6 @@ function updateCountdown() {
 }
 
 updateCountdown();
-
 
 function clearTaskForm() {
 
@@ -1187,7 +953,6 @@ function hideVendorModal() {
   clearVendorForm();
 }
 
-
 function showCompletedModal() {
 
   document
@@ -1276,7 +1041,6 @@ meetingsRef.on("value", (snapshot) => {
 
 });
 
-
 timelineRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -1300,7 +1064,6 @@ timelineRef.on("value", (snapshot) => {
 
 });
 
-
 purchasesRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -1323,31 +1086,6 @@ purchasesRef.on("value", (snapshot) => {
   renderPurchases();
 
 });
-
-function getStatusColor(status) {
-
-  switch(status) {
-
-    case "Completed":
-      return "border-green-400 bg-green-50";
-
-    case "In Progress":
-      return "border-blue-400 bg-blue-50";
-
-    case "Waiting":
-      return "border-yellow-400 bg-yellow-50";
-
-    case "Researching":
-      return "border-purple-400 bg-purple-50";
-
-    case "Critical":
-      return "border-red-400 bg-red-50";
-
-    default:
-      return "border-gray-200 bg-white";
-  }
-
-}
 
 function renderTasks() {
 
@@ -1447,8 +1185,6 @@ function renderTasks() {
 
             </select>
 
-
-
             <button
               onclick="markTaskComplete('${task.id}')"
               class="bg-green-500 text-white px-2 py-1 rounded text-xs">
@@ -1472,8 +1208,6 @@ function renderTasks() {
         </button>
 
       </div>
-
-
 
     `;
 
@@ -1727,7 +1461,6 @@ function togglePurchaseDetails(id) {
 
 }
 
-
 function showPurchaseModal(item = null) {
 
   editingPurchaseId = item ? item.id : null;
@@ -1783,7 +1516,6 @@ function editPurchase(id) {
 
   showPurchaseModal(item);
 }
-
 
 function addPurchaseOptionField(value = "") {
 
@@ -1870,7 +1602,6 @@ async function savePurchaseItem() {
     await purchasesRef.push(purchaseData);
   }
 
-
   document.getElementById("purchaseItemInput").value = "";
   document.getElementById("purchaseNotes").value = "";
   document.getElementById("purchaseLinks").value = "";
@@ -1878,9 +1609,6 @@ async function savePurchaseItem() {
   hidePurchaseModal();
 
 }
-
-
-
 
 async function togglePurchase(id, value) {
 
@@ -1895,7 +1623,6 @@ async function deletePurchase(id) {
   await purchasesRef.child(id).remove();
 
 }
-
 
 async function saveTask() {
 
@@ -1985,8 +1712,6 @@ async function saveTask() {
   }
 }
 
-
-
 async function saveVendor() {
 
   try {
@@ -2035,13 +1760,11 @@ async function saveVendor() {
   }
 }
 
-
 async function updateTaskStatus(id, value) {
 
   await tasksRef.child(id).update({
 
     status: value,
-
 
     completed:
       value === "Completed"
@@ -2064,14 +1787,12 @@ async function markTaskComplete(id) {
 
   await tasksRef.child(id).update({
 
-
     status: "Completed",
     completed: true
 
   });
 
 }
-
 
 function editTask(id) {
 
@@ -2084,8 +1805,6 @@ function editTask(id) {
 
 }
 
-
-
 function editVendor(id) {
 
   const vendor =
@@ -2096,9 +1815,6 @@ function editVendor(id) {
   showVendorModal(vendor);
 
 }
-
-
-
 
 function showMeetingModal(meeting = null) {
 
@@ -2136,7 +1852,6 @@ function hideMeetingModal() {
 
   editingMeetingId = null;
 }
-
 
 function renderMeetings() {
 
@@ -2226,7 +1941,6 @@ function renderMeetings() {
 
 }
 
-
 async function saveMeeting() {
 
   const meeting = {
@@ -2271,7 +1985,6 @@ async function saveMeeting() {
 
 }
 
-
 function editMeeting(id) {
 
   const meeting =
@@ -2284,12 +1997,6 @@ function editMeeting(id) {
 
   showMeetingModal(meeting);
 }
-
-
-
-
-
-
 
 function formatReadableDate(dateString) {
 
@@ -2324,7 +2031,6 @@ function formatStandardTime(time) {
   });
 
 }
-
 
 function renderTimeline() {
 
@@ -2414,9 +2120,6 @@ function renderTimeline() {
 
 }
 
-
-
-
 function showTimelineModal(event = null) {
 
   editingTimelineId = event ? event.id : null;
@@ -2494,7 +2197,6 @@ function editTimelineEvent(id) {
 
   showTimelineModal(event);
 }
-
 
 async function printSchedule() {
 
@@ -2594,7 +2296,6 @@ async function printSchedule() {
 
 }
 
-
 async function updateTimelineType(id, value) {
 
   await timelineRef.child(id).update({
@@ -2603,14 +2304,11 @@ async function updateTimelineType(id, value) {
 
 }
 
-
-
 async function deleteTimelineEvent(id) {
 
   await timelineRef.child(id).remove();
 
 }
-
 
 async function deleteMeeting(id) {
 
@@ -2627,7 +2325,6 @@ async function deleteVendor(id) {
 
   await vendorsRef.child(id).remove();
 }
-
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -2745,7 +2442,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
-
   }
 
 });
@@ -2778,9 +2474,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000c3f0720f9f90a2b466b9d243%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D578c3a6de40f7863adf665af76ef0f70baf3febb1ab331618b2b7d13c6ce3a9f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
 <script>
-
 
 let dinnerHouseholds = [];
 
@@ -3039,7 +2733,6 @@ function toggleEmailSent(householdIndex, checked) {
 
 }
 
-
 let dinnerSearchTerm = "";
 
 function getPendingDinnerCount() {
@@ -3067,7 +2760,6 @@ function getPendingDinnerCount() {
   return pending;
 
 }
-
 
 function mergeDinnerHouseholds(existingList, newList) {
 
@@ -3126,7 +2818,6 @@ function mergeDinnerHouseholds(existingList, newList) {
 
 }
 
-
 function updateDinnerChoice(householdIndex, memberIndex, value) {
 
   dinnerHouseholds[householdIndex]
@@ -3142,7 +2833,6 @@ function updateDinnerChoice(householdIndex, memberIndex, value) {
   }
 
 }
-
 
 function formatPhoneNumber(phone) {
 
@@ -3164,6 +2854,48 @@ function formatPhoneNumber(phone) {
   }
 
   return phone;
+
+}
+
+
+function updateDinnerChoiceCounts() {
+
+  const counts = {
+    beef: 0,
+    chicken: 0,
+    vegetarian: 0,
+    kids: 0,
+    notEating: 0
+  };
+
+  dinnerHouseholds.forEach(household => {
+
+    (household.members || []).forEach(member => {
+
+      const choice = String(member.dinnerChoice || "").toLowerCase().trim();
+
+      if(choice.includes("beef")) counts.beef++;
+      else if(choice.includes("chicken")) counts.chicken++;
+      else if(choice.includes("vegetarian")) counts.vegetarian++;
+      else if(choice.includes("kid")) counts.kids++;
+      else if(choice.includes("not eating") || choice.includes("no meal")) {
+        counts.notEating++;
+      }
+
+    });
+
+  });
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = value;
+  };
+
+  setText("beefCount", counts.beef);
+  setText("chickenCount", counts.chicken);
+  setText("vegetarianCount", counts.vegetarian);
+  setText("kidsCount", counts.kids);
+  setText("notEatingCount", counts.notEating);
 
 }
 
@@ -3221,6 +2953,8 @@ function renderDinnerHouseholds() {
 
   }
 
+  updateDinnerChoiceCounts();
+
   if(!dinnerHouseholds.length) {
 
     container.innerHTML = `
@@ -3237,6 +2971,26 @@ function renderDinnerHouseholds() {
     (document.getElementById("dinnerSearchInput")?.value || "")
       .toLowerCase()
       .trim();
+
+  dinnerHouseholds.sort((a, b) => {
+
+    const aPending = (a.members || []).some(member =>
+      typeof member !== "string" &&
+      (!member.dinnerChoice ||
+       member.dinnerChoice.trim() === "" ||
+       member.dinnerChoice === "Select Dinner Choice")
+    );
+
+    const bPending = (b.members || []).some(member =>
+      typeof member !== "string" &&
+      (!member.dinnerChoice ||
+       member.dinnerChoice.trim() === "" ||
+       member.dinnerChoice === "Select Dinner Choice")
+    );
+
+    return Number(bPending) - Number(aPending);
+
+  });
 
   dinnerHouseholds.forEach((household, householdIndex) => {
 
@@ -3372,11 +3126,18 @@ Kayla & Noah`;
 
       }).join("");
 
+    const hasPendingDinnerChoice =
+      household.members.some(member =>
+        !member.dinnerChoice || member.dinnerChoice.trim() === ""
+      );
+
     const card =
       document.createElement("div");
 
     card.className =
-      "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
+      hasPendingDinnerChoice
+        ? "bg-white rounded-2xl p-5 shadow border-2 border-red-500"
+        : "bg-white rounded-2xl p-5 shadow border border-[#d8a7b1]/30";
 
     card.innerHTML = `
 
@@ -3443,8 +3204,6 @@ Kayla & Noah`;
   });
 
 }
-
-
 
 function downloadDinnerCSV() {
 
@@ -3552,7 +3311,6 @@ function downloadDinnerCSV() {
 
 }
 
-
 </script>
 
   <!-- Firebase Compat SDK -->
@@ -3612,31 +3370,9 @@ function downloadDinnerCSV() {
     }
   </style>
 
-
-
-<meta name="NetsparkQuiltingResult" total-length="29540" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="31015" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="35475" removed="0" rules-found="w2655,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="37592" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="40099" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="41327" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3081" />
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-<meta name="NetsparkQuiltingResult" total-length="44614" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="47311" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w6565,w6563,w11756,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="51253" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="57917" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w11756,w6565,w6563,w2577,w3034,w340,w3789,w3829,w3830,w3081" />
-
-<meta name="NetsparkQuiltingResult" total-length="60987" removed="0" rules-found="w2655,w3390,w4748,w4749,w3012,w2952,w4299,w8897,w2577,w11756,w6565,w6563,w3034,w340,w3789,w3829,w3830,w3081" />
 </head>
 
 <body class="min-h-screen text-gray-800">
@@ -3657,7 +3393,6 @@ function downloadDinnerCSV() {
     </div>
 
   </div>
-
 
   <!-- TAB NAVIGATION -->
 
@@ -3689,7 +3424,6 @@ function downloadDinnerCSV() {
     </button>
 
   </div>
-
 
   <div id="tasksTab" class="tab-content">
 
@@ -3743,7 +3477,6 @@ function downloadDinnerCSV() {
   </div>
 
   
-
 
   <div class="grid lg:grid-cols-2 gap-8 mobile-grid-1">
 
@@ -3871,7 +3604,6 @@ function downloadDinnerCSV() {
 
 </div>
 
-
 <div id="whatsForDinnerTab" class="tab-content hidden">
 
   <div class="glass rounded-3xl p-6 shadow-lg">
@@ -3984,9 +3716,7 @@ function downloadDinnerCSV() {
 
 </div>
 
-
 <!-- TASK MODAL -->
-
 
 <div id="taskModal"
   class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
@@ -4004,7 +3734,6 @@ function downloadDinnerCSV() {
       <input id="taskCategory"
         class="w-full border rounded-2xl p-3"
         placeholder="Category">
-
 
       <input id="taskDeadline"
         type="date"
@@ -4036,7 +3765,6 @@ function downloadDinnerCSV() {
         <option>Completed</option>
 
       </select>
-
 
       <select id="taskVendor"
         class="w-full border rounded-2xl p-3">
@@ -4127,8 +3855,6 @@ function downloadDinnerCSV() {
 
 </div>
 
-
-
 <!-- PURCHASE MODAL -->
 
 <div id="purchaseModal"
@@ -4185,9 +3911,6 @@ function downloadDinnerCSV() {
   </div>
 
 </div>
-
-
-
 
 <!-- MEETING MODAL -->
 
@@ -4246,8 +3969,6 @@ function downloadDinnerCSV() {
   </div>
 
 </div>
-
-
 
 <!-- TIMELINE MODAL -->
 
@@ -4314,7 +4035,6 @@ REALTIME DATABASE RULES:
 }
 */
 
-
 function showTab(tabId) {
 
   document.querySelectorAll(".tab-content")
@@ -4333,7 +4053,6 @@ function showTab(tabId) {
   event.target.classList.add("bg-[#9caf88]");
 
 }
-
 
 const firebaseConfig = {
 
@@ -4389,7 +4108,6 @@ function updateCountdown() {
 }
 
 updateCountdown();
-
 
 function clearTaskForm() {
 
@@ -4493,7 +4211,6 @@ function hideVendorModal() {
   clearVendorForm();
 }
 
-
 function showCompletedModal() {
 
   document
@@ -4582,7 +4299,6 @@ meetingsRef.on("value", (snapshot) => {
 
 });
 
-
 timelineRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -4606,7 +4322,6 @@ timelineRef.on("value", (snapshot) => {
 
 });
 
-
 purchasesRef.on("value", (snapshot) => {
 
   const data = snapshot.val();
@@ -4629,31 +4344,6 @@ purchasesRef.on("value", (snapshot) => {
   renderPurchases();
 
 });
-
-function getStatusColor(status) {
-
-  switch(status) {
-
-    case "Completed":
-      return "border-green-400 bg-green-50";
-
-    case "In Progress":
-      return "border-blue-400 bg-blue-50";
-
-    case "Waiting":
-      return "border-yellow-400 bg-yellow-50";
-
-    case "Researching":
-      return "border-purple-400 bg-purple-50";
-
-    case "Critical":
-      return "border-red-400 bg-red-50";
-
-    default:
-      return "border-gray-200 bg-white";
-  }
-
-}
 
 function renderTasks() {
 
@@ -4753,8 +4443,6 @@ function renderTasks() {
 
             </select>
 
-
-
             <button
               onclick="markTaskComplete('${task.id}')"
               class="bg-green-500 text-white px-2 py-1 rounded text-xs">
@@ -4778,8 +4466,6 @@ function renderTasks() {
         </button>
 
       </div>
-
-
 
     `;
 
@@ -5033,7 +4719,6 @@ function togglePurchaseDetails(id) {
 
 }
 
-
 function showPurchaseModal(item = null) {
 
   editingPurchaseId = item ? item.id : null;
@@ -5089,7 +4774,6 @@ function editPurchase(id) {
 
   showPurchaseModal(item);
 }
-
 
 function addPurchaseOptionField(value = "") {
 
@@ -5176,7 +4860,6 @@ async function savePurchaseItem() {
     await purchasesRef.push(purchaseData);
   }
 
-
   document.getElementById("purchaseItemInput").value = "";
   document.getElementById("purchaseNotes").value = "";
   document.getElementById("purchaseLinks").value = "";
@@ -5184,9 +4867,6 @@ async function savePurchaseItem() {
   hidePurchaseModal();
 
 }
-
-
-
 
 async function togglePurchase(id, value) {
 
@@ -5201,7 +4881,6 @@ async function deletePurchase(id) {
   await purchasesRef.child(id).remove();
 
 }
-
 
 async function saveTask() {
 
@@ -5291,8 +4970,6 @@ async function saveTask() {
   }
 }
 
-
-
 async function saveVendor() {
 
   try {
@@ -5341,13 +5018,11 @@ async function saveVendor() {
   }
 }
 
-
 async function updateTaskStatus(id, value) {
 
   await tasksRef.child(id).update({
 
     status: value,
-
 
     completed:
       value === "Completed"
@@ -5370,14 +5045,12 @@ async function markTaskComplete(id) {
 
   await tasksRef.child(id).update({
 
-
     status: "Completed",
     completed: true
 
   });
 
 }
-
 
 function editTask(id) {
 
@@ -5390,8 +5063,6 @@ function editTask(id) {
 
 }
 
-
-
 function editVendor(id) {
 
   const vendor =
@@ -5402,9 +5073,6 @@ function editVendor(id) {
   showVendorModal(vendor);
 
 }
-
-
-
 
 function showMeetingModal(meeting = null) {
 
@@ -5442,7 +5110,6 @@ function hideMeetingModal() {
 
   editingMeetingId = null;
 }
-
 
 function renderMeetings() {
 
@@ -5532,7 +5199,6 @@ function renderMeetings() {
 
 }
 
-
 async function saveMeeting() {
 
   const meeting = {
@@ -5577,7 +5243,6 @@ async function saveMeeting() {
 
 }
 
-
 function editMeeting(id) {
 
   const meeting =
@@ -5590,12 +5255,6 @@ function editMeeting(id) {
 
   showMeetingModal(meeting);
 }
-
-
-
-
-
-
 
 function formatReadableDate(dateString) {
 
@@ -5630,7 +5289,6 @@ function formatStandardTime(time) {
   });
 
 }
-
 
 function renderTimeline() {
 
@@ -5720,9 +5378,6 @@ function renderTimeline() {
 
 }
 
-
-
-
 function showTimelineModal(event = null) {
 
   editingTimelineId = event ? event.id : null;
@@ -5800,7 +5455,6 @@ function editTimelineEvent(id) {
 
   showTimelineModal(event);
 }
-
 
 async function printSchedule() {
 
@@ -5900,7 +5554,6 @@ async function printSchedule() {
 
 }
 
-
 async function updateTimelineType(id, value) {
 
   await timelineRef.child(id).update({
@@ -5909,14 +5562,11 @@ async function updateTimelineType(id, value) {
 
 }
 
-
-
 async function deleteTimelineEvent(id) {
 
   await timelineRef.child(id).remove();
 
 }
-
 
 async function deleteMeeting(id) {
 
@@ -5933,7 +5583,6 @@ async function deleteVendor(id) {
 
   await vendorsRef.child(id).remove();
 }
-
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -6051,7 +5700,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
-
   }
 
 });
@@ -6084,7 +5732,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </div>
 
-<input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000046c8720fa18ac0f5319b9c75%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D74e8f1c9a923a942e2011edbd9bf61461b58474d75c8755de6d712ddecaaa9c0%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008930720f80f4bc18818fd9ec%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D79b1b0cebd2729c5625692cf1d0c5bf6acef2ef974e023fc53b5e3c1cbcab9db%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000002fe4720fbe3bef0a5801be1c%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D8ce9770af5ab2dbb2cf049a3c0fd39c899d58ca230e75dd85c190f02e1312c34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000e368720fafe3ea473be06393%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3Df4c170b5b94a8c35f580601f65e3c7a23177793e21438f3caf06ff39cbbbec34%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008c3c720fb29f93116cdaa010%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D2d6e4dee5591b406e09845ca856ec430136b9c3c7c4dedc9e161ed37ca5f52ec%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_0000000094dc720fa9468753b0ef6d22%26ts%3D494261%26p%3Dfs%26cid%3D1%26sig%3D577c14d9b9ff0d4076c8618a228d06710fd1038ca3d346e17365e709fa796db6%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000a064720fb47483ec10b1e34a%26ts%3D494262%26p%3Dfs%26cid%3D1%26sig%3Da39d431d5d2802c80c60a8c4317f0a3497a6b5a8db48adce52070e9066b602fa%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a0e849d-2380-8327-9f1c-cd9246fe992e&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000ce64720fa3ad9945bbb794f3%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D2f7259a46e9f9ced8ccfc304c1bfd93575e082e9a4771267d0420efb7b43b921%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a11ff9e-cb10-8325-b529-1479a575ddca&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000008de8720f991cfdef37884b1a%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D02c520da4ad61cfed19dc1ba48539c19af5495a7a47333dfb28d65a933904abf%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120089-8668-8326-97c9-68addc2490d4&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000895c720fa2fb1c1a3ab1fd51%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3Dc10898488f0515927482b38f3497b9b575ffbd2a5e7e27606ae9ecd0be966670%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120169-0780-832f-a239-b34e42ca70e9&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script><input type='hidden' name='ntsp_block_page' value='https://block.canopy.us/?a=block/block1&level=-15&url=http%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_00000000c3f0720f9f90a2b466b9d243%26ts%3D494323%26p%3Dfs%26cid%3D1%26sig%3D578c3a6de40f7863adf665af76ef0f70baf3febb1ab331618b2b7d13c6ce3a9f%26v%3D0&user_id=1142017&sigid=4513068ea413a6dceab8822e1a5f1bc6dce41e269b2fe6b5aeebea04f8e275ee&startm=0&keyword=&referer=https%3A%2F%2Fchatgpt.com%2Fc%2F6a120477-d5bc-832e-9671-68c5881ed7c8&category=24&cause=Quiltingjs'/><input type='hidden' name='ntsp_is_etrog' value='0'/><input type='hidden' name='ntsp_url_category' value='24'/><input type='hidden' name='ntsp_quilting' value='3'/><input type='hidden' name='ntsp_media_level' value='-15'/><input type='hidden' name='ntsp_user_level' value='-15'/><input type='hidden' name='ntsp_url_level' value='20'/><input type='hidden' name='ntsp_block_wa_status' value='0'/><script src='/jsQuilting/server/jsDict_utf8.js?v=1&k=23898278c1850f536d688db3614128a0' type='text/javascript' defer></script>
 <script>
 
 let dinnerHouseholds = [];
@@ -6112,7 +5759,6 @@ dinnerHouseholdsRef.on("value", (snapshot) => {
   }
 
 });
-
 
 function normalizeDinnerHouseholds() {
 
@@ -6149,7 +5795,6 @@ function normalizeDinnerHouseholds() {
   });
 
 }
-
 
 function initializeDinnerTab() {
 
@@ -6328,7 +5973,6 @@ function processDinnerCSV() {
 
         renderDinnerHouseholds();
 
-
       } catch(error) {
 
         console.error(error);
@@ -6350,8 +5994,6 @@ function processDinnerCSV() {
   });
 
 }
-
-
 
 function formatPhoneNumber(phone) {
 
@@ -6375,7 +6017,6 @@ function formatPhoneNumber(phone) {
   return phone;
 
 }
-
 
 function renderDinnerHouseholds() {
 
@@ -6627,7 +6268,6 @@ Kayla & Noah`;
   });
 
 }
-
 
 </script>
 
